@@ -51,6 +51,25 @@ async function diagnoseModelAvailability(key: string, model: string): Promise<vo
   }
 }
 
+async function diagnoseGeneration(key: string, model: string): Promise<void> {
+  // Diagnostic runs only after a real request returns HTTP 404. Never send user input.
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+      body: JSON.stringify({ contents: [{ parts: [{ text: "Reply with OK." }] }] }),
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store"
+    });
+    // Never log response bodies, keys, or user-supplied content.
+    console.error("Gemini generation diagnostic", response.ok ? "MINIMAL_REQUEST_OK" :
+      response.status >= 400 && response.status <= 599 ? `MINIMAL_HTTP_${response.status}` : "MINIMAL_OTHER");
+  } catch {
+    console.error("Gemini generation diagnostic", "MINIMAL_REQUEST_FAILED");
+  }
+}
+
 export const geminiProvider: TranslationProvider = {
   async translate(request: TranslationRequest): Promise<TranslationResult | null> {
     const key = process.env.GEMINI_API_KEY;
@@ -71,7 +90,10 @@ export const geminiProvider: TranslationProvider = {
       cache: "no-store"
     });
     if (!response.ok) {
-      if (response.status === 404) await diagnoseModelAvailability(key, model);
+      if (response.status === 404) {
+        await diagnoseModelAvailability(key, model);
+        await diagnoseGeneration(key, model);
+      }
       throw new Error(`Gemini provider HTTP ${response.status}`);
     }
     const payload: unknown = await response.json();
