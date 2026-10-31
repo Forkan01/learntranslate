@@ -14,10 +14,15 @@ export default function Home() {
   const [result, setResult] = useState<(typeof phrases)[number] | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
-  function translate() {
-    const found = phrases.find(p => (reverse ? p.de : p.en).toLowerCase() === input.trim().toLowerCase());
-    setResult(found ?? null);
-    setNotice(found ? "" : "This offline preview supports the example phrases below. AI translation will be added later.");
+  async function translate() {
+    setNotice("");
+    setResult(null);
+    try {
+      const response = await fetch("/api/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, source: reverse ? "de" : "en", target: reverse ? "en" : "de" }) });
+      if (!response.ok) { setNotice(response.status === 404 ? "This phrase is not in the offline demo yet. Try one of the examples below." : "Translation unavailable. Please try again."); return; }
+      const data: { sourceText: string; translatedText: string; grammar: string } = await response.json();
+      setResult({ en: reverse ? data.translatedText : data.sourceText, de: reverse ? data.sourceText : data.translatedText, grammar: data.grammar });
+    } catch { setNotice("Unable to reach the translation service. Please try again."); }
   }
   return <div className="min-h-screen bg-slate-50 pb-24 text-slate-900 md:pb-0">
     <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5"><strong className="text-xl text-indigo-700">✦ LearnTranslate</strong><span className="rounded-full bg-indigo-50 px-3 py-2 text-xs text-indigo-700">German ↔ English</span></div></header>
