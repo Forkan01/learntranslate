@@ -1,8 +1,6 @@
 name: Bootstrap LearnTranslate
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/lt-01-foundation]
 permissions:
   contents: write
 jobs:
