@@ -21,31 +21,6 @@ jobs:
           npx --yes create-next-app@latest scaffold --typescript --tailwind --eslint --app --src-dir --import-alias "@/*" --use-npm --yes --disable-git
           cp -a scaffold/. .
           rm -rf scaffold
-      - name: Add CI workflow
-        run: |
-          mkdir -p .github/workflows
-          cat > .github/workflows/ci.yml <<'EOF'
-          name: CI
-          on:
-            push:
-              branches: [main, 'feature/**']
-            pull_request:
-          permissions:
-            contents: read
-          jobs:
-            checks:
-              runs-on: ubuntu-latest
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-node@v4
-                  with:
-                    node-version: '22'
-                    cache: npm
-                - run: npm ci
-                - run: npm run lint
-                - run: npx tsc --noEmit
-                - run: npm run build
-          EOF
       - name: Commit foundation
         run: |
           git config user.name "github-actions[bot]"
