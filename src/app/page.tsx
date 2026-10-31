@@ -11,8 +11,8 @@ export default function Home() {
   const [tab, setTab] = useState<Tab>("Translate");
   const [input, setInput] = useState("");
   const [reverse, setReverse] = useState(false);
-  const [result, setResult] = useState<(typeof phrases)[number] | null>(null);
-  const [saved, setSaved] = useState<string[]>([]);
+  const [result, setResult] = useState<((typeof phrases)[number] & { examples?: { source: string; target: string }[] }) | null>(null);
+  const [saved, setSaved] = useState<{ en: string; de: string }[]>([]);
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   async function translate() {
@@ -21,9 +21,9 @@ export default function Home() {
     setLoading(true);
     try {
       const response = await fetch("/api/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, source: reverse ? "de" : "en", target: reverse ? "en" : "de" }) });
-      if (!response.ok) { setNotice(response.status === 404 ? "This phrase is not in the offline demo yet. Try one of the examples below." : "Translation unavailable. Please try again."); return; }
-      const data: { sourceText: string; translatedText: string; grammar: string } = await response.json();
-      setResult({ en: reverse ? data.translatedText : data.sourceText, de: reverse ? data.sourceText : data.translatedText, grammar: data.grammar });
+      if (!response.ok) { setNotice(response.status === 503 ? "Translation is unavailable. Configure Gemini to translate new phrases, or try the offline examples." : "Translation unavailable. Please try again."); return; }
+      const data: { sourceText: string; translatedText: string; grammar: string; examples: { source: string; target: string }[] } = await response.json();
+      setResult({ en: reverse ? data.translatedText : data.sourceText, de: reverse ? data.sourceText : data.translatedText, grammar: data.grammar, examples: data.examples });
     } catch { setNotice("Unable to reach the translation service. Please try again."); } finally { setLoading(false); }
   }
   return <div className="min-h-screen bg-slate-50 pb-24 text-slate-900 md:pb-0">
@@ -40,9 +40,9 @@ export default function Home() {
             <div className="mt-4 flex justify-end"><button disabled={!input.trim() || loading} onClick={translate} className="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white disabled:opacity-40">{loading ? "Translating…" : "Translate →"}</button></div>
           </section>
           {notice && <p role="status" className="rounded-xl bg-amber-50 p-4 text-amber-900">{notice}</p>}
-          {result && <section aria-live="polite" className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Translation</p><p className="text-2xl font-semibold">{reverse ? result.en : result.de}</p><h2 className="font-semibold">Grammar insight</h2><p className="text-slate-600">{result.grammar}</p><button onClick={() => setSaved(old => old.includes(result.en) ? old : [...old, result.en])} className="rounded-lg border border-indigo-300 px-4 py-2 text-indigo-700">{saved.includes(result.en) ? "✓ Saved" : "＋ Save phrase"}</button></section>}
+          {result && <section aria-live="polite" className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Translation</p><p className="text-2xl font-semibold">{reverse ? result.en : result.de}</p><h2 className="font-semibold">Grammar insight</h2><p className="text-slate-600">{result.grammar}</p>{result.examples && result.examples.length > 0 && <div><h2 className="font-semibold">Examples</h2><ul className="mt-2 space-y-2">{result.examples.map((example, index) => <li key={index} className="rounded-lg bg-slate-50 p-3"><p>{example.source}</p><p className="text-slate-500">{example.target}</p></li>)}</ul></div>}<button onClick={() => setSaved(old => old.some(item => item.en === result.en) ? old : [...old, { en: result.en, de: result.de }])} className="rounded-lg border border-indigo-300 px-4 py-2 text-indigo-700">{saved.some(item => item.en === result.en) ? "✓ Saved" : "＋ Save phrase"}</button></section>}
           <div><h2 className="mb-3 font-semibold">Try a phrase</h2><div className="flex flex-wrap gap-2">{phrases.map(p => <button key={p.en} onClick={() => { setReverse(false); setInput(p.en); setResult(null); setNotice(""); }} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm">{p.en}</button>)}</div></div>
-        </div> : tab === "Vocabulary" ? <section className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="font-semibold">Saved phrases ({saved.length})</h2><div className="mt-4 space-y-3">{saved.length ? saved.map(en => <p key={en}>{en} — {phrases.find(p => p.en === en)?.de}</p>) : <p className="text-slate-500">Save translations to see them here. Session-only for now.</p>}</div></section> : <section className="rounded-2xl bg-white p-8 shadow-sm"><h2 className="text-xl font-semibold">{tab} is coming next</h2><p className="mt-3 text-slate-500">This module is planned for an upcoming milestone.</p></section>}
+        </div> : tab === "Vocabulary" ? <section className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="font-semibold">Saved phrases ({saved.length})</h2><div className="mt-4 space-y-3">{saved.length ? saved.map(item => <p key={item.en}>{item.en} — {item.de}</p>) : <p className="text-slate-500">Save translations to see them here. Session-only for now.</p>}</div></section> : <section className="rounded-2xl bg-white p-8 shadow-sm"><h2 className="text-xl font-semibold">{tab} is coming next</h2><p className="mt-3 text-slate-500">This module is planned for an upcoming milestone.</p></section>}
       </main>
     </div>
   </div>;
