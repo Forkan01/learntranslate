@@ -20,6 +20,37 @@ function parseTranslation(raw: unknown, request: TranslationRequest): Translatio
     source: request.source, target: request.target, grammar: raw.grammar.trim(), examples, provider: "ai" };
 }
 
+async function diagnoseModelAvailability(key: string, model: string): Promise<void> {
+  try {
+    const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=100", {
+      headers: { "x-goog-api-key": key },
+      signal: AbortSignal.timeout(5000),
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      console.error("Gemini model diagnostic", "LIST_HTTP_" + (response.status >= 400 && response.status <= 599 ? response.status : "OTHER"));
+      return;
+    }
+    const payload: unknown = await response.json();
+    if (!isRecord(payload) || !Array.isArray(payload.models)) {
+      console.error("Gemini model diagnostic", "INVALID_LIST_RESPONSE");
+      return;
+    }
+    const matching = payload.models.find((item: unknown) =>
+      isRecord(item) && item.name === "models/" + model
+    );
+    if (!matching) {
+      console.error("Gemini model diagnostic", "MODEL_NOT_IN_FIRST_PAGE");
+    } else {
+      const methods = isRecord(matching) && Array.isArray(matching.supportedGenerationMethods)
+        ? matching.supportedGenerationMethods : [];
+      console.error("Gemini model diagnostic", methods.includes("generateContent") ? "MODEL_LISTED_GENERATE_SUPPORTED" : "MODEL_LISTED_GENERATE_UNSUPPORTED");
+    }
+  } catch {
+    console.error("Gemini model diagnostic", "LIST_REQUEST_FAILED");
+  }
+}
+
 export const geminiProvider: TranslationProvider = {
   async translate(request: TranslationRequest): Promise<TranslationResult | null> {
     const key = process.env.GEMINI_API_KEY;
@@ -39,7 +70,10 @@ export const geminiProvider: TranslationProvider = {
       signal: AbortSignal.timeout(12000),
       cache: "no-store"
     });
-    if (!response.ok) throw new Error(`Gemini provider HTTP ${response.status}`);
+    if (!response.ok) {
+      if (response.status === 404) await diagnoseModelAvailability(key, model);
+      throw new Error(`Gemini provider HTTP ${response.status}`);
+    }
     const payload: unknown = await response.json();
     if (!isRecord(payload) || !Array.isArray(payload.candidates)) return null;
     const candidate = payload.candidates[0];
