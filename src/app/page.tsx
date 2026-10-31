@@ -14,15 +14,17 @@ export default function Home() {
   const [result, setResult] = useState<(typeof phrases)[number] | null>(null);
   const [saved, setSaved] = useState<string[]>([]);
   const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(false);
   async function translate() {
     setNotice("");
     setResult(null);
+    setLoading(true);
     try {
       const response = await fetch("/api/translate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: input, source: reverse ? "de" : "en", target: reverse ? "en" : "de" }) });
       if (!response.ok) { setNotice(response.status === 404 ? "This phrase is not in the offline demo yet. Try one of the examples below." : "Translation unavailable. Please try again."); return; }
       const data: { sourceText: string; translatedText: string; grammar: string } = await response.json();
       setResult({ en: reverse ? data.translatedText : data.sourceText, de: reverse ? data.sourceText : data.translatedText, grammar: data.grammar });
-    } catch { setNotice("Unable to reach the translation service. Please try again."); }
+    } catch { setNotice("Unable to reach the translation service. Please try again."); } finally { setLoading(false); }
   }
   return <div className="min-h-screen bg-slate-50 pb-24 text-slate-900 md:pb-0">
     <header className="border-b border-slate-200 bg-white"><div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5"><strong className="text-xl text-indigo-700">✦ LearnTranslate</strong><span className="rounded-full bg-indigo-50 px-3 py-2 text-xs text-indigo-700">German ↔ English</span></div></header>
@@ -35,7 +37,7 @@ export default function Home() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <label htmlFor="direction" className="mb-3 block text-sm font-semibold">Language direction</label><select id="direction" value={reverse ? "de" : "en"} onChange={e => { setReverse(e.target.value === "de"); setResult(null); }} className="mb-4 rounded-lg border border-slate-200 p-3"><option value="en">English → German</option><option value="de">German → English</option></select>
             <label htmlFor="input" className="sr-only">Text to translate</label><textarea id="input" value={input} onChange={e => setInput(e.target.value)} placeholder="Type a phrase…" className="min-h-36 w-full rounded-xl border border-slate-200 p-4 focus:border-indigo-500 focus:outline-none" />
-            <div className="mt-4 flex justify-end"><button disabled={!input.trim()} onClick={translate} className="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white disabled:opacity-40">Translate →</button></div>
+            <div className="mt-4 flex justify-end"><button disabled={!input.trim() || loading} onClick={translate} className="rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white disabled:opacity-40">{loading ? "Translating…" : "Translate →"}</button></div>
           </section>
           {notice && <p role="status" className="rounded-xl bg-amber-50 p-4 text-amber-900">{notice}</p>}
           {result && <section aria-live="polite" className="space-y-4 rounded-2xl bg-white p-6 shadow-sm"><p className="text-xs font-bold uppercase tracking-wider text-indigo-600">Translation</p><p className="text-2xl font-semibold">{reverse ? result.en : result.de}</p><h2 className="font-semibold">Grammar insight</h2><p className="text-slate-600">{result.grammar}</p><button onClick={() => setSaved(old => old.includes(result.en) ? old : [...old, result.en])} className="rounded-lg border border-indigo-300 px-4 py-2 text-indigo-700">{saved.includes(result.en) ? "✓ Saved" : "＋ Save phrase"}</button></section>}
