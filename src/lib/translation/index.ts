@@ -11,7 +11,7 @@ export async function translate(request: TranslationRequest): Promise<Translatio
       if (result) return result;
     } catch (error) {
       // Do not log API keys, user input, or upstream response bodies.
-      console.error("Translation provider unavailable", error instanceof Error ? error.name : "UnknownError");
+      console.error("Translation provider unavailable", error instanceof Error ? error.message : "UnknownError");
     }
   }
   return offlineProvider.translate(request);
