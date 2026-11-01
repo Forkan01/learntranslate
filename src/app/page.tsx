@@ -18,13 +18,17 @@ export default function Home() {
   const [selectedWord, setSelectedWord] = useState<string | null>(null);
   const [speechNotice, setSpeechNotice] = useState("");
   useEffect(() => {
-    try {
-      const phrases = JSON.parse(localStorage.getItem("lt:saved-phrases:v1") || "[]");
-      const words = JSON.parse(localStorage.getItem("lt:saved-words:v1") || "[]");
-      if (Array.isArray(phrases)) setSaved(phrases.filter((x: unknown): x is {en: string; de: string} => typeof x === "object" && x !== null && "en" in x && "de" in x && typeof x.en === "string" && typeof x.de === "string").slice(0, 500));
-      if (Array.isArray(words)) setSavedWords(words.filter((x: unknown): x is {word: string; meaning: string; note?: string} => typeof x === "object" && x !== null && "word" in x && "meaning" in x && typeof x.word === "string" && typeof x.meaning === "string").slice(0, 500));
-    } catch { /* Malformed or blocked browser storage: use in-memory data. */ }
-    setStorageReady(true);
+    // Defer hydration updates to an asynchronous callback to avoid effect render cascades.
+    const timer = window.setTimeout(() => {
+      try {
+        const phrases: unknown = JSON.parse(localStorage.getItem("lt:saved-phrases:v1") || "[]");
+        const words: unknown = JSON.parse(localStorage.getItem("lt:saved-words:v1") || "[]");
+        if (Array.isArray(phrases)) setSaved(phrases.filter((x: unknown): x is {en: string; de: string} => typeof x === "object" && x !== null && "en" in x && "de" in x && typeof x.en === "string" && typeof x.de === "string").slice(0, 500));
+        if (Array.isArray(words)) setSavedWords(words.filter((x: unknown): x is {word: string; meaning: string; note?: string} => typeof x === "object" && x !== null && "word" in x && "meaning" in x && typeof x.word === "string" && typeof x.meaning === "string").slice(0, 500));
+      } catch { /* Malformed or blocked browser storage: use in-memory data. */ }
+      setStorageReady(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => { if (storageReady) try { localStorage.setItem("lt:saved-phrases:v1", JSON.stringify(saved)); } catch { /* Storage unavailable. */ } }, [saved, storageReady]);
   useEffect(() => { if (storageReady) try { localStorage.setItem("lt:saved-words:v1", JSON.stringify(savedWords)); } catch { /* Storage unavailable. */ } }, [savedWords, storageReady]);
