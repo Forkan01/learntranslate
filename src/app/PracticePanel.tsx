@@ -9,6 +9,7 @@ const KEY = "lt:reviews:v1";
 export default function PracticePanel({ words }: { words: Word[] }) {
   const [reviews, setReviews] = useState<Record<string, Review>>({});
   const [ready, setReady] = useState(false);
+  const [now, setNow] = useState(0);
   const [mode, setMode] = useState<Mode>("flashcards");
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -29,13 +30,13 @@ export default function PracticePanel({ words }: { words: Word[] }) {
           setReviews(safe);
         }
       } catch { /* Storage is optional. */ }
+      setNow(Date.now());
       setReady(true);
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
   useEffect(() => { if (ready) try { localStorage.setItem(KEY, JSON.stringify(reviews)); } catch { /* Storage unavailable. */ } }, [reviews, ready]);
 
-  const now = Date.now();
   const due = words.filter(w => !reviews[w.word] || reviews[w.word].due <= now);
   const current = due.length ? due[index % due.length] : undefined;
   const options = current ? [current.word, ...words.filter(w => w.word !== current.word).slice(0, 3).map(w => w.word)].sort((a, b) => {
@@ -50,6 +51,7 @@ export default function PracticePanel({ words }: { words: Word[] }) {
     setReviews(old => ({ ...old, [current.word]: { interval, due: dueAt, attempts: previous.attempts + 1, correct: previous.correct + Number(correct) } }));
     setSession(old => ({ attempts: old.attempts + 1, correct: old.correct + Number(correct) }));
     setIndex(0);
+    setNow(Date.now());
     setRevealed(false);
     setFeedback(correct ? "Correct! Scheduled for review." : "Keep practicing — this word will return soon.");
   }
