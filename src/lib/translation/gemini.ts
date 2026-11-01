@@ -51,6 +51,34 @@ async function alternateModelListed(key: string): Promise<boolean> {
   return false;
 }
 
+// Never log raw provider messages: they can contain model names, request data or URLs.
+async function logSafeProviderError(response: Response, stage: "PRIMARY" | "FALLBACK"): Promise<void> {
+  let category = "UNCLASSIFIED";
+  let status = "UNAVAILABLE";
+  try {
+    const raw: unknown = await response.clone().json();
+    if (isRecord(raw) && isRecord(raw.error)) {
+      const error = raw.error;
+      const code = error.status;
+      if (typeof code === "string" && [
+        "NOT_FOUND", "PERMISSION_DENIED", "UNAUTHENTICATED", "INVALID_ARGUMENT",
+        "RESOURCE_EXHAUSTED", "FAILED_PRECONDITION", "UNAVAILABLE", "INTERNAL"
+      ].includes(code)) status = code;
+      const message = typeof error.message === "string" ? error.message.toLowerCase() : "";
+      if (/not found|does not exist|is not found/.test(message)) category = "RESOURCE_NOT_FOUND";
+      else if (/not supported|unsupported|doesn't support/.test(message)) category = "METHOD_UNSUPPORTED";
+      else if (/api key|authentication|credential/.test(message)) category = "CREDENTIAL_ISSUE";
+      else if (/permission|access|not enabled|disabled/.test(message)) category = "ACCESS_OR_API_DISABLED";
+      else if (/quota|rate limit|exceeded/.test(message)) category = "QUOTA_OR_RATE_LIMIT";
+      else if (/location|region|country/.test(message)) category = "REGION_RESTRICTION";
+      else if (/invalid|malformed/.test(message)) category = "INVALID_REQUEST";
+    }
+  } catch {
+    category = "ERROR_BODY_UNREADABLE";
+  }
+  console.error("Gemini provider diagnostic", stage, `HTTP_${response.status}`, status, category);
+}
+
 export const geminiProvider: TranslationProvider = {
   async translate(request: TranslationRequest): Promise<TranslationResult | null> {
     const key = process.env.GEMINI_API_KEY;
@@ -73,11 +101,13 @@ export const geminiProvider: TranslationProvider = {
       }
     );
     let response = await generate(model);
+    if (!response.ok) await logSafeProviderError(response, "PRIMARY");
     if (response.status === 404 && model !== "gemini-2.5-flash-lite") {
       const listed = await alternateModelListed(key);
       console.error("Gemini fallback diagnostic", listed ? "FLASH_LITE_LISTED" : "FLASH_LITE_NOT_VERIFIED");
       if (listed) {
         response = await generate("gemini-2.5-flash-lite");
+        if (!response.ok) await logSafeProviderError(response, "FALLBACK");
         console.error("Gemini fallback diagnostic", response.ok ? "FLASH_LITE_OK" :
           response.status >= 400 && response.status <= 599 ? `FLASH_LITE_HTTP_${response.status}` : "FLASH_LITE_OTHER");
       }
