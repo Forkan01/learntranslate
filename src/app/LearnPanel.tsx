@@ -46,6 +46,7 @@ function recordGrammarAnswer(lesson:Lesson,correct:boolean) {
 }
 export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhrase: (phrase: {en:string;de:string})=>void; savedPhrases:{en:string;de:string}[] }) {
   const [selected,setSelected]=useState(0);
+  const [reviewTarget,setReviewTarget]=useState<string|null>(null);
   const [topic,setTopic]=useState("");
   const [aiLevel,setAiLevel]=useState("B2");
   const [generated,setGenerated]=useState<Lesson|null>(null);
@@ -79,7 +80,18 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
   const [choice,setChoice]=useState<number|null>(null);
   const [completed,setCompleted]=useState<string[]>([]);
   const [ready,setReady]=useState(false);
-  useEffect(()=>{const timer=window.setTimeout(()=>{try{const value:unknown=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(value))setCompleted(value.filter((x):x is string=>typeof x==="string").slice(0,100));}catch{}setReady(true);},0);return()=>window.clearTimeout(timer);},[]);
+  useEffect(()=>{const timer=window.setTimeout(()=>{try{const value:unknown=JSON.parse(localStorage.getItem(KEY)||"[]");if(Array.isArray(value))setCompleted(value.filter((x):x is string=>typeof x==="string").slice(0,100));}catch{}
+    try{
+      const raw:unknown=JSON.parse(localStorage.getItem(GRAMMAR_KEY)||"{}");
+      if(raw&&typeof raw==="object"&&!Array.isArray(raw)){
+        const candidates=lessons.map(item=>({item,stat:(raw as Record<string,unknown>)[item.id]})).filter((x):x is {item:Lesson;stat:GrammarStat}=>{
+          const v=x.stat;
+          return !!v&&typeof v==="object"&&"attempts" in v&&"correct" in v&&typeof v.attempts==="number"&&v.attempts>0&&typeof v.correct==="number"&&v.correct<v.attempts;
+        }).sort((a,b)=>(a.stat.correct/a.stat.attempts)-(b.stat.correct/b.stat.attempts));
+        if(candidates.length)setReviewTarget(candidates[0].item.id);
+      }
+    }catch{}
+    setReady(true);},0);return()=>window.clearTimeout(timer);},[]);
   useEffect(()=>{if(ready)try{localStorage.setItem(KEY,JSON.stringify(completed));}catch{}},[completed,ready]);
   const lesson=showGenerated&&generated?generated:lessons[selected];
   const saved=savedPhrases.some(p=>p.en===lesson.example.en);
@@ -94,6 +106,7 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
   return <div className="space-y-5">
     <section className="rounded-2xl bg-white p-5 shadow-sm"><h2 className="text-xl font-semibold">Guided German lessons</h2><p className="mt-2 text-sm text-slate-600">Fifteen guided lessons across A1–C1. Choose a level, learn a rule, then answer a question.</p><p className="mt-3 text-sm font-medium text-indigo-700">{completed.length} of {lessons.length} completed</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-indigo-600" style={{width:completed.length/lessons.length*100+"%"}} /></div></section>
     <section className="rounded-2xl bg-white p-5 shadow-sm space-y-3"><h2 className="text-xl font-semibold">✦ Create a personalized AI lesson</h2><p className="text-sm text-slate-600">Choose a level and topic. Gemini creates a grammar pattern, vocabulary, bilingual examples, and a quick exercise.</p><label htmlFor="ai-level" className="block text-sm font-semibold">German level</label><select id="ai-level" value={aiLevel} onChange={e=>setAiLevel(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white p-3">{["A1","A2","B1","B2","C1"].map(level=><option key={level} value={level}>{level}</option>)}</select><label htmlFor="ai-topic" className="block text-sm font-semibold">What do you want to learn?</label><input id="ai-topic" value={topic} maxLength={120} onChange={e=>setTopic(e.target.value)} placeholder="e.g. German job interviews" className="w-full rounded-lg border border-slate-200 p-3"/><button type="button" disabled={!topic.trim()||generating} onClick={generateLesson} className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white disabled:opacity-40">{generating?"Generating…":"Generate lesson ✦"}</button>{generationError&&<p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{generationError}</p>}{generated&&<button type="button" onClick={()=>{setShowGenerated(true);setChoice(null);}} className="block text-sm font-semibold text-indigo-700">View generated lesson →</button>}<p className="text-xs text-slate-500">AI lessons require an internet connection. Generated lessons are temporary; guided lesson progress stays saved.</p></section>
+    {reviewTarget&&<div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="font-semibold text-amber-950">↻ Recommended grammar review</p><p className="mt-1 text-sm text-amber-900">Based on your earlier quiz mistakes: {lessons.find(item=>item.id===reviewTarget)?.title}</p><button type="button" className="mt-3 rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white" onClick={()=>{const i=lessons.findIndex(item=>item.id===reviewTarget);if(i>=0){setSelected(i);setShowGenerated(false);setChoice(null);setLevelFilter("All");}}}>Review this lesson →</button></div>}
     <div className="flex flex-wrap gap-2" role="group" aria-label="Filter lessons by level">{["All","A1","A2","B1","B2","C1"].map(level=><button key={level} type="button" aria-pressed={levelFilter===level} onClick={()=>setLevelFilter(level)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${levelFilter===level?"bg-indigo-600 text-white":"bg-white text-slate-700 border border-slate-200"}`}>{level}</button>)}</div>
     <div className="grid gap-2 sm:grid-cols-2">{lessons.map((item,index)=>({item,index})).filter(({item})=>levelFilter==="All"||item.level===levelFilter).map(({item,index})=><button type="button" key={item.id} onClick={()=>{setSelected(index);setShowGenerated(false);setChoice(null);}} aria-pressed={selected===index} className={`rounded-xl border p-4 text-left ${selected===index?"border-indigo-600 bg-indigo-50":"border-slate-200 bg-white"}`}><span className="text-xs font-bold text-indigo-700">{item.level} {completed.includes(item.id)?"· ✓ Completed":""}</span><span className="mt-1 block font-semibold">{item.title}</span></button>)}</div>
     <section className="space-y-5 rounded-2xl bg-white p-6 shadow-sm"><div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">{lesson.level} · {isGenerated?"Personalized lesson":`Lesson ${lessons.filter((item,index)=>index<=selected&&item.level===lesson.level).length}`}</p><h2 className="mt-2 text-2xl font-bold">{lesson.title}</h2><p className="mt-2 text-slate-600">{lesson.goal}</p></div>
