@@ -8,7 +8,7 @@ function valid(v: unknown): v is Lesson {
   if (!record(v) || !record(v.example) || !Array.isArray(v.options)) return false;
   const strings = [v.title,v.goal,v.explanation,v.example.en,v.example.de,v.question,v.reason,...v.options];
   return strings.every(x=>typeof x==="string" && x.trim().length>0 && x.length<=1400) &&
-    v.title.length<=100 && v.goal.length<=250 && v.question.length<=300 &&
+    typeof v.title==="string" && v.title.length<=100 && typeof v.goal==="string" && v.goal.length<=250 && typeof v.question==="string" && v.question.length<=300 &&
     v.options.length===3 && Number.isInteger(v.answer) && (v.answer as number)>=0 && (v.answer as number)<3;
 }
 export async function POST(request: Request) {
