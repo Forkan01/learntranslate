@@ -20,6 +20,30 @@ const lessons: Lesson[] = [
   { id:"b2-indirect", level:"B2", title:"Reported speech", goal:"Recognize formal indirect speech.", explanation:"Formal German often uses Konjunktiv I to report someone else's statement without endorsing it.", example:{en:"He says that he is sick.",de:"Er sagt, er sei krank."}, question:"Which form is typical in formal reported speech?", options:["er ist krank","er sei krank","er wäre krank gewesen"], answer:1, reason:"Sei is Konjunktiv I of sein, commonly used for reported speech." }
 ];
 const KEY="lt:lessons-completed:v1";
+const GRAMMAR_KEY="lt:grammar-practice:v1";
+type GrammarStat={attempts:number;correct:number;updated:number;title:string;level:string};
+function grammarId(lesson:Lesson):string {
+  return lesson.id==="ai-personalized"
+    ? "ai:"+lesson.level+":"+(lesson.grammarHighlight||lesson.grammarFocus?.pattern||lesson.title).toLocaleLowerCase("de").trim().slice(0,90)
+    : lesson.id;
+}
+function recordGrammarAnswer(lesson:Lesson,correct:boolean) {
+  try {
+    const raw:unknown=JSON.parse(localStorage.getItem(GRAMMAR_KEY)||"{}");
+    const stats:Record<string,GrammarStat>={};
+    if(raw&&typeof raw==="object"&&!Array.isArray(raw)) {
+      for(const [id,value] of Object.entries(raw)) {
+        if(value&&typeof value==="object"&&"attempts" in value&&"correct" in value&&"updated" in value&&"title" in value&&"level" in value&&
+          typeof value.attempts==="number"&&Number.isFinite(value.attempts)&&typeof value.correct==="number"&&Number.isFinite(value.correct)&&
+          typeof value.updated==="number"&&Number.isFinite(value.updated)&&typeof value.title==="string"&&typeof value.level==="string") stats[id]=value as GrammarStat;
+      }
+    }
+    const id=grammarId(lesson),prev=stats[id];
+    stats[id]={attempts:Math.min(100000,(prev?.attempts||0)+1),correct:Math.min(100000,(prev?.correct||0)+Number(correct)),updated:Date.now(),title:lesson.grammarFocus?.pattern||lesson.title,level:lesson.level};
+    const limited=Object.entries(stats).sort((a,b)=>b[1].updated-a[1].updated).slice(0,150);
+    localStorage.setItem(GRAMMAR_KEY,JSON.stringify(Object.fromEntries(limited)));
+  } catch { /* Browser storage is optional. */ }
+}
 export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhrase: (phrase: {en:string;de:string})=>void; savedPhrases:{en:string;de:string}[] }) {
   const [selected,setSelected]=useState(0);
   const [topic,setTopic]=useState("");
@@ -80,7 +104,7 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
       <div className="rounded-xl bg-indigo-50 p-4"><p className="text-sm text-slate-600">{lesson.example.en}</p><p className="mt-2 font-semibold text-indigo-950">{highlightedGerman(lesson.example.de)}</p><button type="button" onClick={()=>speakGerman(lesson.example.de)} className="mt-3 mr-2 rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm text-indigo-800">🔊 Listen</button><button type="button" onClick={()=>onSavePhrase(lesson.example)} disabled={saved} className="mt-3 rounded-lg border border-indigo-300 bg-white px-3 py-2 text-sm text-indigo-800 disabled:opacity-60">{saved?"✓ Saved to Vocabulary":"＋ Save example phrase"}</button></div>
       {isGenerated&&lesson.extraExamples&&<div><h3 className="font-semibold">More examples · listen and save</h3><div className="mt-3 space-y-3">{lesson.extraExamples.map((item,index)=><div key={index} className="rounded-xl border border-slate-200 p-4"><p className="text-sm text-slate-500">{item.en}</p><p className="mt-1 font-medium">{item.de}</p><div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={()=>speakGerman(item.de)} className="rounded-lg border border-indigo-200 px-3 py-2 text-sm text-indigo-800">🔊 Listen</button><button type="button" onClick={()=>onSavePhrase(item)} disabled={savedPhrases.some(p=>p.en===item.en)} className="rounded-lg border border-indigo-200 px-3 py-2 text-sm text-indigo-800 disabled:opacity-50">{savedPhrases.some(p=>p.en===item.en)?"✓ Saved":"＋ Save phrase"}</button></div></div>)}</div></div>}
       {speechError&&<p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{speechError}</p>}
-      <div><h3 className="font-semibold">Check your understanding · practice</h3><p className="mt-2 text-slate-700">{lesson.question}</p><div className="mt-3 space-y-2">{lesson.options.map((option,index)=><button key={index} type="button" disabled={passed} onClick={()=>{setChoice(index);if(index===lesson.answer&&!isGenerated)setCompleted(old=>old.includes(lesson.id)?old:[...old,lesson.id]);}} className={`block w-full rounded-lg border p-3 text-left text-sm ${choice===index?(passed?"border-green-500 bg-green-50":"border-amber-500 bg-amber-50"):"border-slate-200 bg-white"}`}>{option}</button>)}</div>{choice!==null&&<p role="status" className={`mt-3 rounded-lg p-3 text-sm ${passed?"bg-green-50 text-green-900":"bg-amber-50 text-amber-900"}`}>{passed?"Correct! "+lesson.reason:"Not quite. Try again. Review the grammar pattern above."}</p>}</div>
+      <div><h3 className="font-semibold">Check your understanding · practice</h3><p className="mt-2 text-slate-700">{lesson.question}</p><div className="mt-3 space-y-2">{lesson.options.map((option,index)=><button key={index} type="button" disabled={passed} onClick={()=>{recordGrammarAnswer(lesson,index===lesson.answer);setChoice(index);if(index===lesson.answer&&!isGenerated)setCompleted(old=>old.includes(lesson.id)?old:[...old,lesson.id]);}} className={`block w-full rounded-lg border p-3 text-left text-sm ${choice===index?(passed?"border-green-500 bg-green-50":"border-amber-500 bg-amber-50"):"border-slate-200 bg-white"}`}>{option}</button>)}</div>{choice!==null&&<p role="status" className={`mt-3 rounded-lg p-3 text-sm ${passed?"bg-green-50 text-green-900":"bg-amber-50 text-amber-900"}`}>{passed?"Correct! "+lesson.reason:"Not quite. Try again. Review the grammar pattern above."}</p>}</div>
       <div className="flex justify-end"><button type="button" disabled={!passed||(!isGenerated&&selected===lessons.length-1)} onClick={()=>{setShowGenerated(false);setSelected(i=>isGenerated?i:Math.min(i+1,lessons.length-1));setChoice(null);setLevelFilter("All");}} className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white disabled:opacity-40">{isGenerated?"Back to guided lessons →":"Next lesson →"}</button></div>
     </section><p className="text-xs text-slate-500">The 15 guided lessons and their completion records work offline. AI-generated lessons require Gemini and are not saved automatically.</p>
   </div>;
