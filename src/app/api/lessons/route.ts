@@ -80,7 +80,7 @@ function normalizeVocabulary(lesson: Lesson): Lesson {
   return {
     ...lesson,
     vocabulary: lesson.vocabulary.map(item => {
-      const match = /^(der|die|das|den|dem|des)\\s+(.+)$/i.exec(item.german.trim());
+      const match = /^(der|die|das|den|dem|des)\s+(.+)$/i.exec(item.german.trim());
       if (!match) return item;
       const article = knownNouns[match[2].toLocaleLowerCase("de")];
       if (!article || match[1].toLocaleLowerCase("de") === article) return item;
@@ -91,11 +91,11 @@ function normalizeVocabulary(lesson: Lesson): Lesson {
 function validVocabulary(lesson: Lesson): boolean {
   return lesson.vocabulary.every(item => {
     const word = item.german.trim();
-    if (/^(den|dem|des)\\s+/i.test(word)) return false;
-    if (/^(der|die|das)\\s+/i.test(word)) return true;
+    if (/^(den|dem|des)\s+/i.test(word)) return false;
+    if (/^(der|die|das)\s+/i.test(word)) return true;
     // Plural-only nouns, verbs, adjectives and adverbs may omit an article.
     // Reject likely bare singular nouns based on the model's own note.
-    return !/\\b(singular noun|masculine noun|feminine noun|neuter noun)\\b/i.test(item.note);
+    return !/\b(singular noun|masculine noun|feminine noun|neuter noun)\b/i.test(item.note);
   });
 }
 
