@@ -28,7 +28,7 @@ function valid(v: unknown): v is Lesson {
 // Correct a known terminology confusion deterministically; do not rewrite free-form German.
 function normalizeGrammarTerminology(lesson: Lesson): Lesson {
   const mentionsDamit = [lesson.goal, lesson.explanation, lesson.grammarFocus.pattern, lesson.grammarFocus.explanation, lesson.example.de]
-    .some(value => /\\bdamit\\b/i.test(value));
+    .some(value => /\bdamit\b/i.test(value));
   if (!mentionsDamit) return lesson;
   const fix = (value: string) => value.replace(/Zustandssatz|Zustandssätze/gi, match =>
     match.toLowerCase() === "zustandssätze" ? "Finalsätze" : "Finalsatz");
