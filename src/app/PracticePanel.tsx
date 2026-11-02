@@ -7,6 +7,7 @@ type Card = { id: string; prompt: string; answer: string; note?: string };
 type Review = { interval: number; due: number; attempts: number; correct: number };
 type Mode = "flashcards" | "quiz";
 const KEY = "lt:reviews:v1";
+const ACTIVITY_KEY = "lt:practice-activity:v1";
 
 export default function PracticePanel({ words, phrases }: { words: Word[]; phrases: Phrase[] }) {
   const [reviews, setReviews] = useState<Record<string, Review>>({});
@@ -57,6 +58,18 @@ export default function PracticePanel({ words, phrases }: { words: Word[]; phras
     const dueAt = timestamp + (correct ? interval * 86400000 : 60000);
     setReviews(old => ({ ...old, [current.id]: { interval, due: dueAt, attempts: previous.attempts + 1, correct: previous.correct + Number(correct) } }));
     setSession(old => ({ attempts: old.attempts + 1, correct: old.correct + Number(correct) }));
+    try {
+      const d = new Date(timestamp);
+      const date = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+      const raw: unknown = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
+      const entries: { date: string; attempts: number; correct: number }[] = Array.isArray(raw)
+        ? raw.filter((a): a is { date: string; attempts: number; correct: number } => a && typeof a.date === "string" && Number.isFinite(a.attempts) && Number.isFinite(a.correct))
+        : [];
+      const existing = entries.find(a => a.date === date);
+      if (existing) { existing.attempts++; existing.correct += Number(correct); }
+      else entries.push({ date, attempts: 1, correct: Number(correct) });
+      localStorage.setItem(ACTIVITY_KEY, JSON.stringify(entries.slice(-365)));
+    } catch { /* Storage is optional. */ }
     setIndex(0);
     setNow(timestamp);
     setRevealed(false);
