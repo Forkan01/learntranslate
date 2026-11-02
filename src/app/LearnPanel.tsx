@@ -35,7 +35,7 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
       const response=await fetch("/api/lessons",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({level:aiLevel,topic:topic.trim()})});
       if (!response.ok) throw new Error("Lesson unavailable");
       const data: {lesson:Lesson}=await response.json();
-      setGenerated({...data.lesson,id:"ai-"+Date.now(),level:aiLevel});setShowGenerated(true);
+      setGenerated({...data.lesson,id:"ai-personalized",level:aiLevel});setShowGenerated(true);
     } catch {setGenerationError("AI lesson generation is unavailable right now. Your guided lessons still work.");}
     finally {setGenerating(false);}
   }
