@@ -21,7 +21,15 @@ const lessons: Lesson[] = [
 ];
 const KEY="lt:lessons-completed:v1";
 const GRAMMAR_KEY="lt:grammar-practice:v1";
-type GrammarStat={attempts:number;correct:number;updated:number;title:string;level:string};
+type GrammarStat={attempts:number;correct:number;updated:number;title:string;level:string;recent?:boolean[]};
+function mastery(stat:GrammarStat):boolean {
+  return (stat.recent?.length||0)>=3 && stat.recent!.slice(-3).every(Boolean);
+}
+function reviewDifficulty(stat:GrammarStat):"reinforce"|"standard"|"challenge" {
+  const recent=stat.recent||[];
+  if(recent.length<2 || recent.slice(-2).some(correct=>!correct)) return "reinforce";
+  return recent.slice(-3).every(Boolean)&&recent.length>=3?"challenge":"standard";
+}
 function grammarId(lesson:Lesson):string {
   return lesson.id==="ai-personalized"
     ? "ai:"+lesson.level+":"+(lesson.grammarHighlight||lesson.grammarFocus?.pattern||lesson.title).toLocaleLowerCase("de").trim().slice(0,90)
@@ -39,7 +47,7 @@ function recordGrammarAnswer(lesson:Lesson,correct:boolean) {
       }
     }
     const id=grammarId(lesson),prev=stats[id];
-    stats[id]={attempts:Math.min(100000,(prev?.attempts||0)+1),correct:Math.min(100000,(prev?.correct||0)+Number(correct)),updated:Date.now(),title:lesson.grammarFocus?.pattern||lesson.title,level:lesson.level};
+    stats[id]={attempts:Math.min(100000,(prev?.attempts||0)+1),correct:Math.min(100000,(prev?.correct||0)+Number(correct)),updated:Date.now(),title:lesson.grammarFocus?.pattern||lesson.title,level:lesson.level,recent:[...(prev?.recent||[]).filter(x=>typeof x==="boolean").slice(-4),correct]};
     const limited=Object.entries(stats).sort((a,b)=>b[1].updated-a[1].updated).slice(0,150);
     localStorage.setItem(GRAMMAR_KEY,JSON.stringify(Object.fromEntries(limited)));
   } catch { /* Browser storage is optional. */ }
@@ -47,6 +55,8 @@ function recordGrammarAnswer(lesson:Lesson,correct:boolean) {
 export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhrase: (phrase: {en:string;de:string})=>void; savedPhrases:{en:string;de:string}[] }) {
   const [selected,setSelected]=useState(0);
   const [reviewTarget,setReviewTarget]=useState<string|null>(null);
+  const [reviewStats,setReviewStats]=useState<Record<string,GrammarStat>>({});
+  const [reviewMode,setReviewMode]=useState(false);
   const [topic,setTopic]=useState("");
   const [aiLevel,setAiLevel]=useState("B2");
   const [generated,setGenerated]=useState<Lesson|null>(null);
@@ -65,14 +75,14 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
     utterance.onerror=()=>setSpeechError("German speech is unavailable. Check your device's text-to-speech settings.");
     window.speechSynthesis.speak(utterance);
   }
-  async function generateLesson() {
-    if (!topic.trim() || generating) return;
+  async function generateLesson(reviewLesson?:Lesson) {
+    if ((!reviewLesson&&!topic.trim()) || generating) return;
     setGenerating(true);setGenerationError("");setGenerated(null);setChoice(null);
     try {
-      const response=await fetch("/api/lessons",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({level:aiLevel,topic:topic.trim()})});
+      const response=await fetch("/api/lessons",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(reviewLesson?{level:reviewLesson.level,topic:reviewLesson.title,review:{focus:reviewLesson.grammarFocus?.pattern||reviewLesson.title,difficulty:reviewDifficulty(reviewStats[reviewLesson.id]||{attempts:0,correct:0,updated:0,title:"",level:reviewLesson.level})}}:{level:aiLevel,topic:topic.trim()})});
       if (!response.ok) throw new Error("Lesson unavailable");
       const data: {lesson:Lesson}=await response.json();
-      setGenerated({...data.lesson,id:"ai-personalized",level:aiLevel});setShowGenerated(true);
+      setGenerated({...data.lesson,id:"ai-personalized",level:reviewLesson?.level||aiLevel});setReviewMode(!!reviewLesson);setShowGenerated(true);
     } catch {setGenerationError("AI lesson generation is unavailable right now. Your guided lessons still work.");}
     finally {setGenerating(false);}
   }
@@ -88,7 +98,12 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
           const v=x.stat;
           return !!v&&typeof v==="object"&&"attempts" in v&&"correct" in v&&typeof v.attempts==="number"&&v.attempts>0&&typeof v.correct==="number"&&v.correct<v.attempts;
         }).sort((a,b)=>(a.stat.correct/a.stat.attempts)-(b.stat.correct/b.stat.attempts));
-        if(candidates.length)setReviewTarget(candidates[0].item.id);
+        const stats:Record<string,GrammarStat>={};
+        for(const [id,v] of Object.entries(raw))if(v&&typeof v==="object"&&"attempts" in v&&"correct" in v&&"title" in v&&"level" in v&&
+          typeof v.attempts==="number"&&typeof v.correct==="number"&&typeof v.title==="string"&&typeof v.level==="string")stats[id]=v as GrammarStat;
+        setReviewStats(stats);
+        const eligible=candidates.filter(({stat})=>!mastery(stat));
+        if(eligible.length)setReviewTarget(eligible[0].item.id);
       }
     }catch{}
     setReady(true);},0);return()=>window.clearTimeout(timer);},[]);
@@ -106,10 +121,10 @@ export default function LearnPanel({ onSavePhrase, savedPhrases }: { onSavePhras
   return <div className="space-y-5">
     <section className="rounded-2xl bg-white p-5 shadow-sm"><h2 className="text-xl font-semibold">Guided German lessons</h2><p className="mt-2 text-sm text-slate-600">Fifteen guided lessons across A1–C1. Choose a level, learn a rule, then answer a question.</p><p className="mt-3 text-sm font-medium text-indigo-700">{completed.length} of {lessons.length} completed</p><div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full bg-indigo-600" style={{width:completed.length/lessons.length*100+"%"}} /></div></section>
     <section className="rounded-2xl bg-white p-5 shadow-sm space-y-3"><h2 className="text-xl font-semibold">✦ Create a personalized AI lesson</h2><p className="text-sm text-slate-600">Choose a level and topic. Gemini creates a grammar pattern, vocabulary, bilingual examples, and a quick exercise.</p><label htmlFor="ai-level" className="block text-sm font-semibold">German level</label><select id="ai-level" value={aiLevel} onChange={e=>setAiLevel(e.target.value)} className="w-full rounded-lg border border-slate-200 bg-white p-3">{["A1","A2","B1","B2","C1"].map(level=><option key={level} value={level}>{level}</option>)}</select><label htmlFor="ai-topic" className="block text-sm font-semibold">What do you want to learn?</label><input id="ai-topic" value={topic} maxLength={120} onChange={e=>setTopic(e.target.value)} placeholder="e.g. German job interviews" className="w-full rounded-lg border border-slate-200 p-3"/><button type="button" disabled={!topic.trim()||generating} onClick={generateLesson} className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white disabled:opacity-40">{generating?"Generating…":"Generate lesson ✦"}</button>{generationError&&<p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{generationError}</p>}{generated&&<button type="button" onClick={()=>{setShowGenerated(true);setChoice(null);}} className="block text-sm font-semibold text-indigo-700">View generated lesson →</button>}<p className="text-xs text-slate-500">AI lessons require an internet connection. Generated lessons are temporary; guided lesson progress stays saved.</p></section>
-    {reviewTarget&&<div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="font-semibold text-amber-950">↻ Recommended grammar review</p><p className="mt-1 text-sm text-amber-900">Based on your earlier quiz mistakes: {lessons.find(item=>item.id===reviewTarget)?.title}</p><button type="button" className="mt-3 rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white" onClick={()=>{const i=lessons.findIndex(item=>item.id===reviewTarget);if(i>=0){setSelected(i);setShowGenerated(false);setChoice(null);setLevelFilter("All");}}}>Review this lesson →</button></div>}
+    {reviewTarget&&<div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><p className="font-semibold text-amber-950">↻ Recommended grammar review</p><p className="mt-1 text-sm text-amber-900">Based on your earlier quiz mistakes: {lessons.find(item=>item.id===reviewTarget)?.title}</p><button type="button" className="mt-3 rounded-lg bg-amber-900 px-4 py-2 text-sm font-semibold text-white" onClick={()=>{const i=lessons.findIndex(item=>item.id===reviewTarget);if(i>=0){setSelected(i);setShowGenerated(false);setChoice(null);setLevelFilter("All");}}}>Review this lesson →</button><button type="button" disabled={generating} onClick={()=>{const target=lessons.find(item=>item.id===reviewTarget);if(target)void generateLesson(target);}} className="ml-2 mt-3 rounded-lg bg-indigo-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{generating?"Generating…":"✦ Generate targeted practice"}</button><p className="mt-2 text-xs text-amber-900">Adaptive difficulty: {reviewDifficulty(reviewStats[reviewTarget]||{attempts:0,correct:0,updated:0,title:"",level:""})}. Three recent correct attempts mark this topic mastered. AI generation uses your existing provider.</p></div>}
     <div className="flex flex-wrap gap-2" role="group" aria-label="Filter lessons by level">{["All","A1","A2","B1","B2","C1"].map(level=><button key={level} type="button" aria-pressed={levelFilter===level} onClick={()=>setLevelFilter(level)} className={`rounded-lg px-4 py-2 text-sm font-semibold ${levelFilter===level?"bg-indigo-600 text-white":"bg-white text-slate-700 border border-slate-200"}`}>{level}</button>)}</div>
     <div className="grid gap-2 sm:grid-cols-2">{lessons.map((item,index)=>({item,index})).filter(({item})=>levelFilter==="All"||item.level===levelFilter).map(({item,index})=><button type="button" key={item.id} onClick={()=>{setSelected(index);setShowGenerated(false);setChoice(null);}} aria-pressed={selected===index} className={`rounded-xl border p-4 text-left ${selected===index?"border-indigo-600 bg-indigo-50":"border-slate-200 bg-white"}`}><span className="text-xs font-bold text-indigo-700">{item.level} {completed.includes(item.id)?"· ✓ Completed":""}</span><span className="mt-1 block font-semibold">{item.title}</span></button>)}</div>
-    <section className="space-y-5 rounded-2xl bg-white p-6 shadow-sm"><div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">{lesson.level} · {isGenerated?"Personalized lesson":`Lesson ${lessons.filter((item,index)=>index<=selected&&item.level===lesson.level).length}`}</p><h2 className="mt-2 text-2xl font-bold">{lesson.title}</h2><p className="mt-2 text-slate-600">{lesson.goal}</p></div>
+    <section className="space-y-5 rounded-2xl bg-white p-6 shadow-sm"><div><p className="text-xs font-bold uppercase tracking-widest text-indigo-700">{lesson.level} · {isGenerated?(reviewMode?"Targeted grammar practice":"Personalized lesson"):`Lesson ${lessons.filter((item,index)=>index<=selected&&item.level===lesson.level).length}`}</p><h2 className="mt-2 text-2xl font-bold">{lesson.title}</h2><p className="mt-2 text-slate-600">{lesson.goal}</p></div>
       {isGenerated&&<div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-indigo-700"><span className="rounded-full bg-indigo-50 px-3 py-2">1 · Learn the rule</span><span className="rounded-full bg-indigo-50 px-3 py-2">2 · Explore examples</span><span className="rounded-full bg-indigo-50 px-3 py-2">3 · Practice</span></div>}
       <div><h3 className="font-semibold">Learn the rule</h3><p className="mt-2 leading-relaxed text-slate-700">{lesson.explanation}</p></div>
       {isGenerated&&lesson.grammarFocus&&<div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4"><h3 className="font-semibold">Grammar pattern</h3><p className="mt-2 font-semibold text-indigo-950">{lesson.grammarFocus.pattern}</p><p className="mt-2 text-sm leading-relaxed text-slate-700">{lesson.grammarFocus.explanation}</p></div>}
