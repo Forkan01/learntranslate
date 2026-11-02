@@ -2,7 +2,7 @@ name: LT-14A Lockfile Refresh
 on:
   push:
     branches: [feature/lt-14a-auth-foundation]
-    paths: [package.json]
+    paths: [package.json, '.github/workflows/lt14a-lockfile.yml']
 permissions:
   contents: write
 jobs:
