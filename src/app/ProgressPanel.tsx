@@ -30,7 +30,7 @@ export default function ProgressPanel({ words, phrases }: { words: Word[]; phras
       } catch { /* Storage unavailable. */ }
       try {
         const raw: unknown = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
-        if (Array.isArray(raw)) setActivity(raw.filter((x): x is Activity => x && typeof x.date === "string" && /^\\d{4}-\\d{2}-\\d{2}$/.test(x.date) && Number.isFinite(x.attempts) && Number.isFinite(x.correct)).slice(-365));
+        if (Array.isArray(raw)) setActivity(raw.filter((x): x is Activity => x && typeof x.date === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(x.date) && Number.isFinite(x.attempts) && Number.isFinite(x.correct)).slice(-365));
       } catch { /* Storage unavailable. */ }
       setNow(Date.now());
     }, 0);
