@@ -6,6 +6,8 @@ type Activity = { date: string; attempts: number; correct: number };
 type Word = { word: string; meaning: string };
 type Phrase = { en: string; de: string };
 const REVIEW_KEY = "lt:reviews:v1";
+const GRAMMAR_KEY = "lt:grammar-practice:v1";
+type GrammarStat = {attempts:number;correct:number;updated:number;title:string;level:string};
 const ACTIVITY_KEY = "lt:practice-activity:v1";
 const dayKey = (timestamp: number) => {
   const d = new Date(timestamp);
@@ -14,6 +16,7 @@ const dayKey = (timestamp: number) => {
 
 export default function ProgressPanel({ words, phrases }: { words: Word[]; phrases: Phrase[] }) {
   const [reviews, setReviews] = useState<Record<string, Review>>({});
+  const [grammar, setGrammar] = useState<Record<string, GrammarStat>>({});
   const [activity, setActivity] = useState<Activity[]>([]);
   const [now, setNow] = useState(0);
   useEffect(() => {
@@ -32,6 +35,19 @@ export default function ProgressPanel({ words, phrases }: { words: Word[]; phras
         const raw: unknown = JSON.parse(localStorage.getItem(ACTIVITY_KEY) || "[]");
         if (Array.isArray(raw)) setActivity(raw.filter((x): x is Activity => x && typeof x.date === "string" && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(x.date) && Number.isFinite(x.attempts) && Number.isFinite(x.correct)).slice(-365));
       } catch { /* Storage unavailable. */ }
+      try {
+        const raw:unknown=JSON.parse(localStorage.getItem(GRAMMAR_KEY)||"{}");
+        if(raw&&typeof raw==="object"&&!Array.isArray(raw)){
+          const safe:Record<string,GrammarStat>={};
+          for(const [id,value] of Object.entries(raw)){
+            if(value&&typeof value==="object"&&"attempts" in value&&"correct" in value&&"updated" in value&&"title" in value&&"level" in value&&
+              typeof value.attempts==="number"&&Number.isFinite(value.attempts)&&value.attempts>0&&
+              typeof value.correct==="number"&&Number.isFinite(value.correct)&&value.correct>=0&&value.correct<=value.attempts&&
+              typeof value.updated==="number"&&Number.isFinite(value.updated)&&typeof value.title==="string"&&typeof value.level==="string") safe[id]=value as GrammarStat;
+          }
+          setGrammar(safe);
+        }
+      }catch{/* Optional storage. */}
       setNow(Date.now());
     }, 0);
     return () => window.clearTimeout(timer);
@@ -65,6 +81,9 @@ export default function ProgressPanel({ words, phrases }: { words: Word[]; phras
     }
   }
   const next = active.filter(r => r.due > now).map(r => r.due).sort((a,b) => a-b)[0];
+  const weakGrammar=Object.entries(grammar).filter(([,v])=>v.correct<v.attempts).sort((a,b)=>(a[1].correct/a[1].attempts)-(b[1].correct/b[1].attempts)||b[1].attempts-a[1].attempts).slice(0,5);
+  const grammarAttempts=Object.values(grammar).reduce((sum,v)=>sum+v.attempts,0);
+  const grammarCorrect=Object.values(grammar).reduce((sum,v)=>sum+v.correct,0);
   const stats = [
     ["Saved items", ids.length], ["Due now", due], ["Mastered (8+ days)", mastered], ["Learning", learning], ["Needs practice", reviewed], ["Current streak", streak + (streak === 1 ? " day" : " days")]
   ];
@@ -72,6 +91,7 @@ export default function ProgressPanel({ words, phrases }: { words: Word[]; phras
     <div className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="text-xl font-semibold">Your learning progress</h2><p className="mt-2 text-sm text-slate-600">Words and sentences · saved on this browser</p>
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">{stats.map(([label, value]) => <div key={label} className="rounded-xl bg-indigo-50 p-4"><p className="text-xs text-indigo-800">{label}</p><p className="mt-2 text-2xl font-bold">{value}</p></div>)}</div>
     </div>
+    <div className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="font-semibold">Grammar strengths &amp; weak spots</h2><p className="mt-2 text-sm text-slate-600">{grammarAttempts} grammar quiz attempts · {grammarAttempts?Math.round(100*grammarCorrect/grammarAttempts)+"%":"—"} correct</p>{weakGrammar.length?<div className="mt-3 space-y-2">{weakGrammar.map(([id,item])=><div key={id} className="rounded-xl border border-amber-200 bg-amber-50 p-3"><p className="font-medium">{item.title}</p><p className="text-sm text-amber-900">{item.level} · {item.correct}/{item.attempts} correct · Recommended for review</p></div>)}</div>:<p className="mt-3 text-sm text-slate-600">No weak grammar topics recorded yet. Answer questions in Learn to build your personalized review list.</p>}<p className="mt-3 text-xs text-slate-500">Each answer counts as an attempt, including retries. Saved only in this browser.</p></div>
     <div className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="font-semibold">Practice accuracy</h2><p className="mt-3 text-2xl font-bold">{totalAttempts ? Math.round(100 * totalCorrect / totalAttempts) + "%" : "—"}</p><p className="text-sm text-slate-600">{totalCorrect} correct of {totalAttempts} recorded reviews · lifetime totals for currently saved items</p><div className="mt-3 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-indigo-600" style={{ width: totalAttempts ? Math.round(100 * totalCorrect / totalAttempts) + "%" : "0%" }} /></div><p className="mt-3 text-sm text-slate-600">{next ? "Next scheduled review: " + new Date(next).toLocaleString() : "No future reviews scheduled yet."}</p></div>
     <div className="rounded-2xl bg-white p-6 shadow-sm"><h2 className="font-semibold">Last 7 days</h2><p className="mt-2 text-sm text-slate-600">{todayActivity?.attempts || 0} reviews today · {todayActivity?.correct || 0} correct</p><div className="mt-4 grid grid-cols-7 gap-2">{week.map(d => <div key={d.key} className="text-center"><div title={d.attempts + " reviews"} className="flex h-16 items-end justify-center rounded-lg bg-indigo-50 p-2"><div className="w-full rounded-sm bg-indigo-600" style={{ height: d.attempts ? Math.max(12, Math.min(100, d.attempts * 15)) + "%" : "0%" }} /></div><p className="mt-1 text-xs text-slate-600">{d.label}</p><p className="text-xs font-semibold">{d.attempts}</p></div>)}</div><p className="mt-3 text-xs text-slate-500">Daily activity tracking begins with this update. Earlier reviews count toward lifetime statistics but cannot be assigned to past dates.</p></div>
   </section>;
