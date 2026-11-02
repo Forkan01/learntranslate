@@ -50,15 +50,15 @@ export default function PracticePanel({ words, phrases }: { words: Word[]; phras
     const hash = (value: string) => [...value].reduce((n, ch) => (n * 31 + ch.charCodeAt(0)) | 0, 0);
     return hash(a + current.prompt) - hash(b + current.prompt);
   }) : [];
-  function grade(correct: boolean) {
+  function grade(correct: boolean, timestamp: number) {
     if (!current) return;
     const previous = reviews[current.id] || (category === "words" ? reviews[current.id.slice(5)] : undefined) || { interval: 0, due: 0, attempts: 0, correct: 0 };
     const interval = correct ? Math.min(30, previous.interval ? previous.interval * 2 : 1) : 0;
-    const dueAt = Date.now() + (correct ? interval * 86400000 : 60000);
+    const dueAt = timestamp + (correct ? interval * 86400000 : 60000);
     setReviews(old => ({ ...old, [current.id]: { interval, due: dueAt, attempts: previous.attempts + 1, correct: previous.correct + Number(correct) } }));
     setSession(old => ({ attempts: old.attempts + 1, correct: old.correct + Number(correct) }));
     setIndex(0);
-    setNow(Date.now());
+    setNow(timestamp);
     setRevealed(false);
     setQuizAnswer(null);
     setFeedback(correct ? "Correct! Scheduled for review." : "Keep practicing — this word will return soon.");
@@ -68,9 +68,9 @@ export default function PracticePanel({ words, phrases }: { words: Word[]; phras
     <div className="flex flex-wrap gap-2"><button type="button" onClick={() => { setCategory("words"); setIndex(0); setRevealed(false); setQuizAnswer(null); setFeedback(""); }} className={`rounded-lg px-4 py-2 ${category === "words" ? "bg-indigo-600 text-white" : "bg-slate-100"}`}>Words ({words.length})</button><button type="button" onClick={() => { setCategory("sentences"); setIndex(0); setRevealed(false); setQuizAnswer(null); setFeedback(""); }} className={`rounded-lg px-4 py-2 ${category === "sentences" ? "bg-indigo-600 text-white" : "bg-slate-100"}`}>Sentences ({phrases.length})</button></div>
     <div className="flex gap-2"><button type="button" onClick={() => { setMode("flashcards"); setRevealed(false); setQuizAnswer(null); setFeedback(""); }} className={`rounded-lg px-4 py-2 ${mode === "flashcards" ? "bg-indigo-600 text-white" : "bg-slate-100"}`}>Flashcards</button><button type="button" onClick={() => { setMode("quiz"); setRevealed(false); setQuizAnswer(null); setFeedback(""); }} className={`rounded-lg px-4 py-2 ${mode === "quiz" ? "bg-indigo-600 text-white" : "bg-slate-100"}`}>Quiz</button></div>
     {current ? <div className="space-y-4 rounded-xl bg-indigo-50 p-5"><p className="text-sm font-semibold text-indigo-700">{category === "words" ? "What is the German for:" : "Translate into German:"}</p><p className="text-2xl font-semibold">{current.prompt}</p>
-      {mode === "flashcards" ? <>{revealed ? <><p className="text-xl font-semibold">{current.answer}</p>{current.note && <p className="text-sm text-slate-600">{current.note}</p>}<div className="flex gap-2"><button type="button" onClick={() => grade(false)} className="rounded-lg bg-white px-4 py-3">Again</button><button type="button" onClick={() => grade(true)} className="rounded-lg bg-indigo-600 px-4 py-3 text-white">Remembered</button></div></> : <button type="button" onClick={() => setRevealed(true)} className="rounded-lg bg-indigo-600 px-4 py-3 text-white">Reveal answer</button>}</> :
+      {mode === "flashcards" ? <>{revealed ? <><p className="text-xl font-semibold">{current.answer}</p>{current.note && <p className="text-sm text-slate-600">{current.note}</p>}<div className="flex gap-2"><button type="button" onClick={() => grade(false, Date.now())} className="rounded-lg bg-white px-4 py-3">Again</button><button type="button" onClick={() => grade(true, Date.now())} className="rounded-lg bg-indigo-600 px-4 py-3 text-white">Remembered</button></div></> : <button type="button" onClick={() => setRevealed(true)} className="rounded-lg bg-indigo-600 px-4 py-3 text-white">Reveal answer</button>}</> :
       options.length >= 2 ? <div className="grid gap-2">{options.map(option => <button key={option} type="button" disabled={quizAnswer !== null} onClick={() => setQuizAnswer(option)} className="rounded-lg border border-indigo-200 bg-white p-3 text-left">{option}</button>)}</div> : <p className="text-sm text-slate-600">Save at least two different items in this category to enable multiple-choice questions.</p>}
-      {mode === "quiz" && quizAnswer !== null && <div role="status" className="rounded-lg bg-white p-3"><p className="font-semibold">{quizAnswer === current.answer ? "Correct!" : "Not quite."}</p><p>Answer: {current.answer}</p>{current.note && <p className="text-sm text-slate-600">{current.note}</p>}<button type="button" onClick={() => grade(quizAnswer === current.answer)} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-white">Continue</button></div>}
+      {mode === "quiz" && quizAnswer !== null && <div role="status" className="rounded-lg bg-white p-3"><p className="font-semibold">{quizAnswer === current.answer ? "Correct!" : "Not quite."}</p><p>Answer: {current.answer}</p>{current.note && <p className="text-sm text-slate-600">{current.note}</p>}<button type="button" onClick={() => grade(quizAnswer === current.answer, Date.now())} className="mt-3 rounded-lg bg-indigo-600 px-4 py-2 text-white">Continue</button></div>}
     </div> : <p className="rounded-xl bg-emerald-50 p-5 text-emerald-900">{cards.length ? "All caught up! Your next review will appear when an item is due." : "No saved items in this category yet. Save words or phrases from Translate to begin."}</p>}
     {feedback && <p role="status" className="text-sm text-indigo-700">{feedback}</p>}
     <p className="text-xs text-slate-500">Correct answers return after 1, 2, 4, 8… days (up to 30 days). Missed items return after one minute. Progress is stored only in this browser.</p>
