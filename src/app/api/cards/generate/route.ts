@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateLearningCard } from "@/lib/cards/generate";
+import { reserveGenerationAttempt } from "@/lib/cards/generation-budget";
 import type { CardLanguage, CardType } from "@/lib/cards/schema";
 
 export async function POST(request: Request) {
@@ -32,6 +33,15 @@ export async function POST(request: Request) {
       !["de", "en"].includes(String(source)) || !["de", "en"].includes(String(target)) ||
       source === target || !["word", "sentence"].includes(String(type))) {
     return NextResponse.json({ error: "Invalid card request" }, { status: 400 });
+  }
+  const admission = await reserveGenerationAttempt();
+  if (admission === "limited") {
+    return NextResponse.json({ error: "Generation limit reached" }, {
+      status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "120" },
+    });
+  }
+  if (admission !== "allowed") {
+    return NextResponse.json({ error: "Generation budget unavailable" }, { status: 503 });
   }
   try {
     const card = await generateLearningCard({
