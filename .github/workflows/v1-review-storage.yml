@@ -1,0 +1,21 @@
+name: V1 Review Storage Contract
+on:
+  pull_request:
+    paths:
+      - 'src/lib/cards/review-storage.ts'
+      - 'tests/v1c4-review-storage-contract.test.mjs'
+      - '.github/workflows/v1-review-storage.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/cards/review-storage.ts'
+      - 'tests/v1c4-review-storage-contract.test.mjs'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/v1c4-review-storage-contract.test.mjs
