@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { LearningCardContent } from "@/lib/cards/schema";
+import GenerationSignIn from "./GenerationSignIn";
 
 type CardRow = { id: string; content: LearningCardContent };
 type Direction = "de" | "en";
@@ -13,6 +14,7 @@ export default function CardSearchPage() {
   const [result, setResult] = useState<CardRow | null>(null);
   const [notice, setNotice] = useState("");
   const [missing, setMissing] = useState(false);
+  const [showSignIn, setShowSignIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   async function search(event: FormEvent<HTMLFormElement>) {
@@ -87,7 +89,9 @@ export default function CardSearchPage() {
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <button type="button" disabled aria-disabled="true" className="cursor-not-allowed rounded-2xl bg-[#d4d1c9] px-5 py-3 text-sm font-bold text-[#5d5d59]">✧ Generate with AI · Coming soon</button>
           <Link href="/categories" className="rounded-2xl border border-[#b9aa90] bg-white px-5 py-3 text-sm font-bold">Explore categories →</Link>
+          <button type="button" onClick={() => setShowSignIn(value => !value)} className="rounded-2xl border border-[#b9aa90] bg-white px-5 py-3 text-sm font-bold">{showSignIn ? "Hide sign-in" : "Sign in (preview)"}</button>
         </div>
+        {showSignIn && <GenerationSignIn />}
       </section>}
       {notice && <p role="status" className="mt-8 rounded-2xl border border-[#e8d5b3] bg-[#fff0d4] p-5">{notice}</p>}
       {card && <article aria-live="polite" className="mt-10 overflow-hidden rounded-[30px] border-2 border-[#d9d4c9] bg-white shadow-[6px_7px_0_#e8e1d6]">
