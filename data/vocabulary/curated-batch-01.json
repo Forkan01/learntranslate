@@ -326,7 +326,7 @@
       "sourceLanguage": "de",
       "targetLanguage": "en",
       "term": "Beschwerde",
-      "translation": "complaint",
+      "translation": "complaint; symptom (usually plural in medical contexts)",
       "grammar": {
         "partOfSpeech": "noun",
         "article": "die",
@@ -353,6 +353,9 @@
           "source": "Er berichtet über ähnliche Beschwerden.",
           "translation": "He reports similar symptoms."
         }
+      ],
+      "usageNotes": [
+        "In healthcare, 'Beschwerden' commonly means symptoms or physical discomfort; 'Beschwerde' can also mean a complaint about a service."
       ]
     },
     "categories": [
@@ -458,8 +461,8 @@
           "translation": "We had a good conversation."
         },
         {
-          "source": "Kann ich kurz mit dir ein Gespräch führen?",
-          "translation": "Can I have a quick conversation with you?"
+          "source": "Ich möchte ein kurzes Gespräch mit dir führen.",
+          "translation": "I'd like to have a brief conversation with you."
         },
         {
           "source": "Das Gespräch dauert etwa eine Stunde.",
