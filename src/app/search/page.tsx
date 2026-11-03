@@ -12,12 +12,13 @@ export default function CardSearchPage() {
   const [source, setSource] = useState<Direction>("de");
   const [result, setResult] = useState<CardRow | null>(null);
   const [notice, setNotice] = useState("");
+  const [missing, setMissing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!term.trim() || loading) return;
-    setLoading(true); setResult(null); setNotice(""); setSaved(false);
+    setLoading(true); setResult(null); setNotice(""); setSaved(false); setMissing(false);
     try {
       const target = source === "de" ? "en" : "de";
       let found: CardRow | null = null;
@@ -32,7 +33,7 @@ export default function CardSearchPage() {
       if (found) break;
       }
       if (found) setResult(found);
-      else setNotice("No published card yet for this search. Try a suggested phrase, or switch languages.");
+      else setMissing(true);
     } catch { setNotice("Search is temporarily unavailable. Please try again."); }
     finally { setLoading(false); }
   }
@@ -71,14 +72,23 @@ export default function CardSearchPage() {
       </div>
       <form onSubmit={search} className="rounded-[28px] border-2 border-[#d8d4cb] bg-white p-4 shadow-[5px_6px_0_#e9e2d7]">
         <label htmlFor="card-term" className="mb-2 block text-sm font-bold">What would you like to learn?</label>
-        <input id="card-term" value={term} maxLength={250} onChange={e => setTerm(e.target.value)}
+        <input id="card-term" value={term} maxLength={250} onChange={e => {setTerm(e.target.value);setMissing(false);}}
           placeholder={source === "de" ? "e.g. die Gewohnheit" : "e.g. habit"} className="w-full rounded-2xl bg-[#f8f7f3] px-4 py-4 text-lg outline-none focus:ring-2 focus:ring-[#7ea99e]" />
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-          <label className="text-sm">From <select value={source} onChange={e => {setSource(e.target.value as Direction);setTerm("");setResult(null);setNotice("");setSaved(false);}} className="ml-2 rounded-xl border border-[#d8d4cb] bg-white p-2"><option value="de">German → English</option><option value="en">English → German</option></select></label>
+          <label className="text-sm">From <select value={source} onChange={e => {setSource(e.target.value as Direction);setTerm("");setResult(null);setNotice("");setSaved(false);setMissing(false);}} className="ml-2 rounded-xl border border-[#d8d4cb] bg-white p-2"><option value="de">German → English</option><option value="en">English → German</option></select></label>
           <button disabled={loading || !term.trim()} className="rounded-2xl bg-[#668d84] px-7 py-3 font-bold text-white disabled:opacity-50">{loading ? "Searching…" : "Search →"}</button>
         </div>
       </form>
-      <div className="mt-5 flex flex-wrap gap-2 text-sm"><span className="py-2 text-[#69737a]">Try:</span>{(source === "de" ? ["Gespräch", "Bewerbung", "Gewohnheiten"] : ["habit", "conversation", "rent"]).map(x => <button key={x} type="button" onClick={() => {setTerm(x);setNotice("");setResult(null);setSaved(false);}} className="rounded-full border border-[#e4d9c5] bg-[#fff1d7] px-3 py-2">{x}</button>)}</div>
+      <div className="mt-5 flex flex-wrap gap-2 text-sm"><span className="py-2 text-[#69737a]">Try:</span>{(source === "de" ? ["Gespräch", "Bewerbung", "Gewohnheiten"] : ["habit", "conversation", "rent"]).map(x => <button key={x} type="button" onClick={() => {setTerm(x);setNotice("");setResult(null);setSaved(false);setMissing(false);}} className="rounded-full border border-[#e4d9c5] bg-[#fff1d7] px-3 py-2">{x}</button>)}</div>
+      {missing && !loading && <section aria-live="polite" className="mt-8 rounded-[28px] border-2 border-[#e4d7bf] bg-[#fff0d5] p-6 shadow-[4px_5px_0_#eee4d5]">
+        <span className="text-xs font-black uppercase tracking-wider text-[#806d53]">✦ New vocabulary</span>
+        <h2 className="mt-3 break-words text-xl font-black">No published card for “{term.trim()}” yet</h2>
+        <p className="mt-2 text-sm text-[#645e55]">AI-generated learning cards are coming soon. For now, try another search or explore published vocabulary by topic.</p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <button type="button" disabled aria-disabled="true" className="cursor-not-allowed rounded-2xl bg-[#d4d1c9] px-5 py-3 text-sm font-bold text-[#5d5d59]">✧ Generate with AI · Coming soon</button>
+          <Link href="/categories" className="rounded-2xl border border-[#b9aa90] bg-white px-5 py-3 text-sm font-bold">Explore categories →</Link>
+        </div>
+      </section>}
       {notice && <p role="status" className="mt-8 rounded-2xl border border-[#e8d5b3] bg-[#fff0d4] p-5">{notice}</p>}
       {card && <article aria-live="polite" className="mt-10 overflow-hidden rounded-[30px] border-2 border-[#d9d4c9] bg-white shadow-[6px_7px_0_#e8e1d6]">
         <div className="bg-[#e6f2ec] px-6 py-7 sm:px-9">
