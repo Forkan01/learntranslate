@@ -58,8 +58,8 @@ export default function CardSearchPage() {
   return <div className="min-h-screen bg-[#fffaf2] text-[#343d4a]">
     <header className="border-b-2 border-[#e8e0d6] bg-white/80">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5">
-        <a href="/search" className="text-xl font-black tracking-tight text-[#4f6c77]">✳ LearnTranslate</a>
-        <nav className="flex items-center gap-2 text-sm font-bold"><a href="/search" aria-current="page" className="rounded-full bg-[#e7f2ee] px-3 py-2">Search</a><a href="/categories" className="rounded-full px-3 py-2">Categories</a></nav>
+        <a href="/" className="text-xl font-black tracking-tight text-[#4f6c77]">✳ LearnTranslate</a>
+        <nav className="flex items-center gap-2 text-sm font-bold"><a href="/" aria-current="page" className="rounded-full bg-[#e7f2ee] px-3 py-2">Search</a><a href="/categories" className="rounded-full px-3 py-2">Categories</a></nav>
       </div>
     </header>
     <main className="mx-auto max-w-3xl px-5 pb-20 pt-12">
