@@ -34,7 +34,13 @@ export async function POST(request: Request) {
       source === target || !["word", "sentence"].includes(String(type))) {
     return NextResponse.json({ error: "Invalid card request" }, { status: 400 });
   }
-  const admission = await reserveGenerationAttempt();
+  // Only authenticated private callers may supply this accounting label.
+  // It is NOT a public user identity or authentication mechanism.
+  const actorId = request.headers.get("x-lt-private-actor");
+  if (!actorId || !/^[a-zA-Z0-9_-]{8,80}$/.test(actorId)) {
+    return NextResponse.json({ error: "Private actor identifier required" }, { status: 400 });
+  }
+  const admission = await reserveGenerationAttempt(actorId);
   if (admission === "limited") {
     return NextResponse.json({ error: "Generation limit reached" }, {
       status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "120" },
