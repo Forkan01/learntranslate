@@ -1,1 +1,3 @@
-// V1-E: the new pastel Search experience is the homepage.\n// The previous five-tab implementation is preserved in ./LegacyHome.tsx.\nexport { default } from "./search/page";\n
+// V1-E: new pastel Search experience is the homepage.
+// Previous five-tab implementation is preserved in ./LegacyHome.tsx.
+export { default } from "./search/page";
