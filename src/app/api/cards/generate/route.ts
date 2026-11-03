@@ -3,10 +3,22 @@ import { generateLearningCard } from "@/lib/cards/generate";
 import type { CardLanguage, CardType } from "@/lib/cards/schema";
 
 export async function POST(request: Request) {
-  // Disabled by default: public unauthenticated generation can incur unbounded API cost.
-  // Enable only in a controlled environment; rate limiting and persistence follow in V1-C.4.
+  // Fail closed: even with generation enabled, this route is private-only.
+  // Never put CARD_GENERATION_ADMIN_TOKEN in NEXT_PUBLIC_* or browser code.
+  // Public generation requires a separate durable per-user quota and abuse controls.
   if (process.env.ENABLE_CARD_GENERATION !== "true") {
     return NextResponse.json({ error: "Card generation is not enabled" }, { status: 503 });
+  }
+  const expected = process.env.CARD_GENERATION_ADMIN_TOKEN;
+  const authorization = request.headers.get("authorization");
+  // A long random token is provisioned server-side only. Reject all public callers.
+  if (!expected || expected.length < 32 || !authorization ||
+      authorization !== "Bearer " + expected) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  // Disable caching and ensure browser origins cannot call this with credentials.
+  if (request.headers.has("origin")) {
+    return NextResponse.json({ error: "Browser generation disabled" }, { status: 403 });
   }
   let body: unknown;
   try { body = await request.json(); } catch {
