@@ -42,7 +42,38 @@ export async function GET(request: Request) {
         typeof row.content !== "object" || row.content === null)) {
       throw new Error("Invalid card response");
     }
-    return NextResponse.json({ found: Boolean(row), card: row ?? null }, {
+    // Reverse English lookup for the initial German→English published collection.
+    // Only exact translation senses are accepted; no fuzzy or substring matches.
+    // This bounded fallback is suitable for the small curated V1 dataset.
+    let match: Record<string, unknown> | undefined = row;
+    if (!match && source === "en" && target === "de") {
+      const reverseUrl = new URL("/rest/v1/cards", url.origin);
+      reverseUrl.searchParams.set("select", "id,search_key,status,content,created_at,updated_at");
+      reverseUrl.searchParams.set("source_language", "eq.de");
+      reverseUrl.searchParams.set("target_language", "eq.en");
+      reverseUrl.searchParams.set("type", "eq." + type);
+      reverseUrl.searchParams.set("status", "eq.published");
+      reverseUrl.searchParams.set("order", "term.asc");
+      reverseUrl.searchParams.set("limit", "500");
+      const reverseResponse = await fetch(reverseUrl, {
+        headers: { apikey: key, Authorization: "Bearer " + key },
+        cache: "no-store", signal: AbortSignal.timeout(8000),
+      });
+      if (!reverseResponse.ok) throw new Error("Reverse lookup failed");
+      const reverseRows: unknown = await reverseResponse.json();
+      if (!Array.isArray(reverseRows)) throw new Error("Invalid reverse response");
+      const wanted = term.normalize("NFKC").trim().replace(/\\s+/gu, " ").toLocaleLowerCase("en-US");
+      match = (reverseRows as Record<string, unknown>[]).find(candidate => {
+        if (candidate.status !== "published" || typeof candidate.content !== "object" ||
+            !candidate.content || Array.isArray(candidate.content)) return false;
+        const content = candidate.content as Record<string, unknown>;
+        if (content.type !== type || content.sourceLanguage !== "de" ||
+            content.targetLanguage !== "en" || typeof content.translation !== "string") return false;
+        return content.translation.split(";").some(sense =>
+          sense.trim().normalize("NFKC").toLocaleLowerCase("en-US") === wanted);
+      });
+    }
+    return NextResponse.json({ found: Boolean(match), card: match ?? null }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch {
