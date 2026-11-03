@@ -20,14 +20,17 @@ export default function CardSearchPage() {
     try {
       const target = source === "de" ? "en" : "de";
       let found: CardRow | null = null;
-      for (const candidate of [...new Set([term.trim(), term.trim().replace(/^(?:der|die|das)\\s+/iu, "")])]) {\n      for (const type of ["word", "sentence"]) {
+      for (const candidate of [...new Set([term.trim(), term.trim().replace(/^(?:der|die|das)\s+/iu, "")])]) {
+      for (const type of ["word", "sentence"]) {
         const query = new URLSearchParams({ term: candidate, source, target, type });
         const response = await fetch("/api/cards/search?" + query, { cache: "no-store" });
         if (!response.ok) throw new Error("Search unavailable");
         const payload: { found: boolean; card: { id: string; content: LearningCardContent } | null } = await response.json();
         if (payload.found && payload.card) { found = payload.card; break; }
       }
-      if (found) break;\n      }\n      if (found) setResult(found);
+      if (found) break;
+      }
+      if (found) setResult(found);
       else setNotice("No published card yet for this search. Try one of the suggested words or sentences below.");
     } catch { setNotice("Search is temporarily unavailable. Please try again."); }
     finally { setLoading(false); }
