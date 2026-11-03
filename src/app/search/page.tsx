@@ -20,15 +20,18 @@ export default function CardSearchPage() {
     try {
       const target = source === "de" ? "en" : "de";
       let found: CardRow | null = null;
+      for (const candidate of [...new Set([term.trim(), term.trim().replace(/^(?:der|die|das)\s+/iu, "")])]) {
       for (const type of ["word", "sentence"]) {
-        const query = new URLSearchParams({ term: term.trim(), source, target, type });
+        const query = new URLSearchParams({ term: candidate, source, target, type });
         const response = await fetch("/api/cards/search?" + query, { cache: "no-store" });
         if (!response.ok) throw new Error("Search unavailable");
         const payload: { found: boolean; card: { id: string; content: LearningCardContent } | null } = await response.json();
         if (payload.found && payload.card) { found = payload.card; break; }
       }
+      if (found) break;
+      }
       if (found) setResult(found);
-      else setNotice("No published card yet for this exact search. Try a German word with its article, such as “die Absicht”.");
+      else setNotice("No published card yet for this search. Try one of the suggested words or sentences below.");
     } catch { setNotice("Search is temporarily unavailable. Please try again."); }
     finally { setLoading(false); }
   }
@@ -74,7 +77,7 @@ export default function CardSearchPage() {
           <button disabled={loading || !term.trim()} className="rounded-2xl bg-[#668d84] px-7 py-3 font-bold text-white disabled:opacity-50">{loading ? "Searching…" : "Search →"}</button>
         </div>
       </form>
-      <div className="mt-5 flex flex-wrap gap-2 text-sm"><span className="py-2 text-[#69737a]">Try:</span>{["die Absicht", "das Gespräch", "Es kommt darauf an"].map(x => <button key={x} type="button" onClick={() => {setTerm(x);setSource("de");setNotice("");}} className="rounded-full border border-[#e4d9c5] bg-[#fff1d7] px-3 py-2">{x}</button>)}</div>
+      <div className="mt-5 flex flex-wrap gap-2 text-sm"><span className="py-2 text-[#69737a]">Try:</span>{["Gespräch", "Bewerbung", "Ich hätte gern einen Termin."].map(x => <button key={x} type="button" onClick={() => {setTerm(x);setSource("de");setNotice("");}} className="rounded-full border border-[#e4d9c5] bg-[#fff1d7] px-3 py-2">{x}</button>)}</div>
       {notice && <p role="status" className="mt-8 rounded-2xl border border-[#e8d5b3] bg-[#fff0d4] p-5">{notice}</p>}
       {card && <article aria-live="polite" className="mt-10 overflow-hidden rounded-[30px] border-2 border-[#d9d4c9] bg-white shadow-[6px_7px_0_#e8e1d6]">
         <div className="bg-[#e6f2ec] px-6 py-7 sm:px-9">
