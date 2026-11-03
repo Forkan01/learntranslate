@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { LearningCardContent } from "@/lib/cards/schema";
 type Category = { id:string; slug:string; name:string; description?:string };
 type Card = { id:string; term:string; type:"word"|"sentence"; content:LearningCardContent };
@@ -44,7 +45,7 @@ export default function CategoriesPage() {
     } catch {setError("Saving is unavailable on this device.");}
   }
   return <div className="min-h-screen bg-[#fffaf2] text-[#343d4a]">
-    <header className="border-b-2 border-[#e8e0d6] bg-white/80"><div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-5"><a href="/" className="text-xl font-black text-[#4f6c77]">✳ LearnTranslate</a><nav className="flex gap-2 text-sm font-bold"><a href="/" className="rounded-full px-3 py-2">Search</a><a href="/categories" aria-current="page" className="rounded-full bg-[#e7f2ee] px-3 py-2">Categories</a></nav></div></header>
+    <header className="border-b-2 border-[#e8e0d6] bg-white/80"><div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-5"><Link href="/" className="text-xl font-black text-[#4f6c77]">✳ LearnTranslate</Link><nav className="flex gap-2 text-sm font-bold"><Link href="/" className="rounded-full px-3 py-2">Search</Link><a href="/categories" aria-current="page" className="rounded-full bg-[#e7f2ee] px-3 py-2">Categories</Link></nav></div></header>
     <main className="mx-auto max-w-4xl px-5 pb-20 pt-12">
       {selected ? <><button onClick={()=>{setSelected(null);setError("");}} className="mb-5 rounded-full bg-[#fff0d5] px-4 py-2 font-bold">← All categories</button><h1 className="text-3xl font-black">{icons[selected.slug]} {selected.name}</h1><p className="mt-2 text-[#68727b]">Vocabulary for real-life situations</p></> :
         <><span className="rounded-full bg-[#fbe7ba] px-4 py-2 text-xs font-bold uppercase tracking-wider">✦ Learn by situation</span><h1 className="mt-6 text-4xl font-black">Explore everyday <span className="text-[#668d84]">German.</span></h1><p className="mt-3 text-[#68727b]">Choose a topic and discover useful words and expressions.</p></>}
