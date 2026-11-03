@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { makeCardSearchKey, type CardLanguage, type CardType } from "@/lib/cards/schema";
+import { makeCardSearchKey, normalizeSearchTerm, type CardLanguage, type CardType } from "@/lib/cards/schema";
 
 export async function GET(request: Request) {
   const p = new URL(request.url).searchParams;
@@ -71,6 +71,46 @@ export async function GET(request: Request) {
             content.targetLanguage !== "en" || typeof content.translation !== "string") return false;
         return content.translation.split(";").some(sense =>
           sense.trim().normalize("NFKC").toLocaleLowerCase("en-US") === wanted);
+      });
+    }
+    // German noun lookup: accept an optional article, the exact singular,
+    // or an explicitly curated plural. Never guess arbitrary inflections.
+    if (!match && source === "de" && target === "en" && type === "word") {
+      const wanted = normalizeSearchTerm(term, "de");
+      const withoutArticle = wanted.replace(/^(?:der|die|das)\s+/u, "");
+      const germanUrl = new URL("/rest/v1/cards", url.origin);
+      germanUrl.searchParams.set("select", "id,search_key,status,content,created_at,updated_at");
+      germanUrl.searchParams.set("source_language", "eq.de");
+      germanUrl.searchParams.set("target_language", "eq.en");
+      germanUrl.searchParams.set("type", "eq.word");
+      germanUrl.searchParams.set("status", "eq.published");
+      germanUrl.searchParams.set("order", "term.asc");
+      germanUrl.searchParams.set("limit", "500");
+      const germanResponse = await fetch(germanUrl, {
+        headers: { apikey: key, Authorization: "Bearer " + key },
+        cache: "no-store", signal: AbortSignal.timeout(8000),
+      });
+      if (!germanResponse.ok) throw new Error("German forms lookup failed");
+      const germanRows: unknown = await germanResponse.json();
+      if (!Array.isArray(germanRows)) throw new Error("Invalid German forms response");
+      match = (germanRows as Record<string, unknown>[]).find(candidate => {
+        if (candidate.status !== "published" || !candidate.content ||
+            typeof candidate.content !== "object" || Array.isArray(candidate.content)) return false;
+        const content = candidate.content as Record<string, unknown>;
+        if (content.type !== "word" || content.sourceLanguage !== "de" ||
+            content.targetLanguage !== "en" || typeof content.term !== "string") return false;
+        const grammar = content.grammar;
+        const noun = grammar && typeof grammar === "object" && !Array.isArray(grammar)
+          ? grammar as Record<string, unknown> : null;
+        const singular = normalizeSearchTerm(content.term, "de");
+        const singularBare = singular.replace(/^(?:der|die|das)\s+/u, "");
+        const article = noun?.article;
+        const articleMatch = article === "der" || article === "die" || article === "das"
+          ? wanted === article + " " + singularBare : false;
+        const plural = noun?.partOfSpeech === "noun" && typeof noun.plural === "string"
+          ? normalizeSearchTerm(noun.plural, "de") : "";
+        return wanted === singular || withoutArticle === singularBare ||
+          articleMatch || (plural !== "" && (wanted === plural || withoutArticle === plural));
       });
     }
     return NextResponse.json({ found: Boolean(match), card: match ?? null }, {
