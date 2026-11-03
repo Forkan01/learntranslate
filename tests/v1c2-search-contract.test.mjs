@@ -23,7 +23,8 @@ test("input validation and search-key normalization are present", () => {
 test("database failure cannot be confused with a missing card", () => {
   assert.match(route, /status: 503/);
   assert.match(route, /status: 400/);
-  assert.match(route, /found: Boolean\(match\)/);\n  assert.match(route, /let match: Record<string, unknown> \| undefined = row/);
+  assert.match(route, /found: Boolean\(match\)/);
+  assert.match(route, /let match: Record<string, unknown> \| undefined = row/);
   assert.match(route, /AbortSignal\.timeout\(8000\)/);
 });
 
