@@ -1,0 +1,650 @@
+[
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Verspätung",
+      "translation": "delay",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Verspätungen"
+      },
+      "examples": [
+        {
+          "source": "Der Zug hat zehn Minuten Verspätung.",
+          "translation": "The train is ten minutes late."
+        },
+        {
+          "source": "Wegen der Verspätung verpasse ich den Anschluss.",
+          "translation": "Because of the delay, I will miss my connection."
+        },
+        {
+          "source": "Entschuldigung für die Verspätung.",
+          "translation": "Sorry for the delay."
+        },
+        {
+          "source": "Die Verspätung wurde angekündigt.",
+          "translation": "The delay was announced."
+        },
+        {
+          "source": "Heute gibt es viele Verspätungen.",
+          "translation": "There are many delays today."
+        }
+      ]
+    },
+    "categories": [
+      "travel-transport"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Bewerbung",
+      "translation": "job application",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Bewerbungen"
+      },
+      "examples": [
+        {
+          "source": "Ich habe meine Bewerbung abgeschickt.",
+          "translation": "I sent my job application."
+        },
+        {
+          "source": "Die Bewerbung muss bis Freitag eingehen.",
+          "translation": "The application must arrive by Friday."
+        },
+        {
+          "source": "Sie schreibt gerade eine Bewerbung.",
+          "translation": "She is writing a job application."
+        },
+        {
+          "source": "Meine Bewerbung wurde angenommen.",
+          "translation": "My application was accepted."
+        },
+        {
+          "source": "Für die Bewerbung brauche ich einen Lebenslauf.",
+          "translation": "I need a CV for the application."
+        }
+      ]
+    },
+    "categories": [
+      "work-career"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Miete",
+      "translation": "rent",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Mieten"
+      },
+      "examples": [
+        {
+          "source": "Die Miete ist jeden Monat fällig.",
+          "translation": "The rent is due every month."
+        },
+        {
+          "source": "Ich muss die Miete überweisen.",
+          "translation": "I have to transfer the rent."
+        },
+        {
+          "source": "Die Miete wurde erhöht.",
+          "translation": "The rent was increased."
+        },
+        {
+          "source": "Ist die Miete warm oder kalt?",
+          "translation": "Does the rent include utilities or not?"
+        },
+        {
+          "source": "Wir teilen uns die Miete.",
+          "translation": "We split the rent."
+        }
+      ]
+    },
+    "categories": [
+      "housing"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Rechnung",
+      "translation": "bill; invoice",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Rechnungen"
+      },
+      "examples": [
+        {
+          "source": "Kann ich bitte die Rechnung haben?",
+          "translation": "Could I have the bill, please?"
+        },
+        {
+          "source": "Die Rechnung kommt per E-Mail.",
+          "translation": "The invoice arrives by email."
+        },
+        {
+          "source": "Ich habe die Rechnung bezahlt.",
+          "translation": "I paid the bill."
+        },
+        {
+          "source": "Bitte prüfen Sie die Rechnung.",
+          "translation": "Please check the invoice."
+        },
+        {
+          "source": "Auf der Rechnung steht der Gesamtbetrag.",
+          "translation": "The total amount is shown on the invoice."
+        }
+      ]
+    },
+    "categories": [
+      "shopping"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Zutat",
+      "translation": "ingredient",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Zutaten"
+      },
+      "examples": [
+        {
+          "source": "Welche Zutaten brauchen wir?",
+          "translation": "Which ingredients do we need?"
+        },
+        {
+          "source": "Die wichtigste Zutat ist Reis.",
+          "translation": "The most important ingredient is rice."
+        },
+        {
+          "source": "Alle Zutaten stehen auf der Packung.",
+          "translation": "All ingredients are listed on the package."
+        },
+        {
+          "source": "Diese Zutat fehlt noch.",
+          "translation": "This ingredient is still missing."
+        },
+        {
+          "source": "Ich kaufe die Zutaten für das Abendessen.",
+          "translation": "I'm buying the ingredients for dinner."
+        }
+      ]
+    },
+    "categories": [
+      "food-restaurants"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Prüfung",
+      "translation": "exam",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Prüfungen"
+      },
+      "examples": [
+        {
+          "source": "Morgen habe ich eine Prüfung.",
+          "translation": "I have an exam tomorrow."
+        },
+        {
+          "source": "Ich lerne für die Prüfung.",
+          "translation": "I'm studying for the exam."
+        },
+        {
+          "source": "Die Prüfung war schwierig.",
+          "translation": "The exam was difficult."
+        },
+        {
+          "source": "Wann beginnt die Prüfung?",
+          "translation": "When does the exam start?"
+        },
+        {
+          "source": "Sie hat die Prüfung bestanden.",
+          "translation": "She passed the exam."
+        }
+      ]
+    },
+    "categories": [
+      "education"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Antrag",
+      "translation": "application; formal request",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "der",
+        "plural": "Anträge"
+      },
+      "examples": [
+        {
+          "source": "Ich muss einen Antrag stellen.",
+          "translation": "I have to submit an application."
+        },
+        {
+          "source": "Der Antrag wurde genehmigt.",
+          "translation": "The application was approved."
+        },
+        {
+          "source": "Bitte unterschreiben Sie den Antrag.",
+          "translation": "Please sign the application."
+        },
+        {
+          "source": "Wo kann ich den Antrag abgeben?",
+          "translation": "Where can I submit the application?"
+        },
+        {
+          "source": "Mein Antrag wird noch bearbeitet.",
+          "translation": "My application is still being processed."
+        }
+      ]
+    },
+    "categories": [
+      "german-bureaucracy"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Fehler",
+      "translation": "mistake; error",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "der",
+        "plural": "Fehler"
+      },
+      "examples": [
+        {
+          "source": "Im Programm ist ein Fehler.",
+          "translation": "There is an error in the program."
+        },
+        {
+          "source": "Ich habe einen Fehler gemacht.",
+          "translation": "I made a mistake."
+        },
+        {
+          "source": "Der Fehler wurde behoben.",
+          "translation": "The error was fixed."
+        },
+        {
+          "source": "Kannst du den Fehler finden?",
+          "translation": "Can you find the error?"
+        },
+        {
+          "source": "Diese Meldung zeigt einen Fehler an.",
+          "translation": "This message indicates an error."
+        }
+      ]
+    },
+    "categories": [
+      "technology"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Beschwerde",
+      "translation": "complaint",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Beschwerden"
+      },
+      "examples": [
+        {
+          "source": "Ich habe Beschwerden im Rücken.",
+          "translation": "I have discomfort in my back."
+        },
+        {
+          "source": "Welche Beschwerden haben Sie?",
+          "translation": "What symptoms are you experiencing?"
+        },
+        {
+          "source": "Die Beschwerden sind besser geworden.",
+          "translation": "The symptoms have improved."
+        },
+        {
+          "source": "Bei starken Beschwerden rufen Sie bitte an.",
+          "translation": "Please call if you have severe symptoms."
+        },
+        {
+          "source": "Er berichtet über ähnliche Beschwerden.",
+          "translation": "He reports similar symptoms."
+        }
+      ]
+    },
+    "categories": [
+      "health"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Gewohnheit",
+      "translation": "habit",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Gewohnheiten"
+      },
+      "examples": [
+        {
+          "source": "Das ist eine gute Gewohnheit.",
+          "translation": "That's a good habit."
+        },
+        {
+          "source": "Ich möchte diese Gewohnheit ändern.",
+          "translation": "I want to change this habit."
+        },
+        {
+          "source": "Aus Gewohnheit trinke ich morgens Tee.",
+          "translation": "Out of habit, I drink tea in the morning."
+        },
+        {
+          "source": "Neue Gewohnheiten brauchen Zeit.",
+          "translation": "New habits take time."
+        },
+        {
+          "source": "Sie hat die Gewohnheit, früh aufzustehen.",
+          "translation": "She has the habit of getting up early."
+        }
+      ]
+    },
+    "categories": [
+      "daily-life"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Gefühl",
+      "translation": "feeling",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "das",
+        "plural": "Gefühle"
+      },
+      "examples": [
+        {
+          "source": "Ich habe ein gutes Gefühl.",
+          "translation": "I have a good feeling."
+        },
+        {
+          "source": "Kannst du deine Gefühle beschreiben?",
+          "translation": "Can you describe your feelings?"
+        },
+        {
+          "source": "Dieses Gefühl kenne ich.",
+          "translation": "I know that feeling."
+        },
+        {
+          "source": "Er spricht offen über seine Gefühle.",
+          "translation": "He talks openly about his feelings."
+        },
+        {
+          "source": "Ich habe das Gefühl, dass es regnen wird.",
+          "translation": "I have a feeling that it will rain."
+        }
+      ]
+    },
+    "categories": [
+      "feelings-emotions"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Gespräch",
+      "translation": "conversation; discussion",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "das",
+        "plural": "Gespräche"
+      },
+      "examples": [
+        {
+          "source": "Wir hatten ein gutes Gespräch.",
+          "translation": "We had a good conversation."
+        },
+        {
+          "source": "Kann ich kurz mit dir ein Gespräch führen?",
+          "translation": "Can I have a quick conversation with you?"
+        },
+        {
+          "source": "Das Gespräch dauert etwa eine Stunde.",
+          "translation": "The conversation lasts about an hour."
+        },
+        {
+          "source": "Sie sucht das Gespräch mit ihrem Chef.",
+          "translation": "She wants to talk with her boss."
+        },
+        {
+          "source": "Nach dem Gespräch war alles klar.",
+          "translation": "After the conversation, everything was clear."
+        }
+      ]
+    },
+    "categories": [
+      "conversations"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich hätte gern einen Termin.",
+      "translation": "I'd like an appointment.",
+      "naturalMeaning": "A polite way to request an appointment."
+    },
+    "categories": [
+      "german-bureaucracy"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Könnten Sie das bitte wiederholen?",
+      "translation": "Could you please repeat that?",
+      "naturalMeaning": "A polite request when you didn't hear or understand something."
+    },
+    "categories": [
+      "conversations"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich habe den Anschluss verpasst.",
+      "translation": "I missed my connection.",
+      "naturalMeaning": "Used when you miss a connecting train, bus, or other service."
+    },
+    "categories": [
+      "travel-transport"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich fühle mich heute nicht gut.",
+      "translation": "I don't feel well today.",
+      "naturalMeaning": "A common way to say you are feeling unwell."
+    },
+    "categories": [
+      "health"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Wann ist die Miete fällig?",
+      "translation": "When is the rent due?",
+      "naturalMeaning": "Asks for the deadline for paying rent."
+    },
+    "categories": [
+      "housing"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Kann ich mit Karte bezahlen?",
+      "translation": "Can I pay by card?",
+      "naturalMeaning": "A common question at a shop or restaurant."
+    },
+    "categories": [
+      "shopping"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich freue mich auf das Wochenende.",
+      "translation": "I'm looking forward to the weekend.",
+      "naturalMeaning": "Expresses anticipation; 'sich freuen auf' takes the accusative."
+    },
+    "categories": [
+      "feelings-emotions"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich bin auf der Suche nach einer Stelle.",
+      "translation": "I'm looking for a job.",
+      "naturalMeaning": "A natural phrase used when job hunting."
+    },
+    "categories": [
+      "work-career"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Was empfehlen Sie?",
+      "translation": "What do you recommend?",
+      "naturalMeaning": "A polite question for recommendations, especially in a restaurant or shop."
+    },
+    "categories": [
+      "food-restaurants"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich muss noch etwas erledigen.",
+      "translation": "I still have something to take care of.",
+      "naturalMeaning": "Refers to an unfinished task or errand."
+    },
+    "categories": [
+      "daily-life"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Ich habe die Prüfung bestanden.",
+      "translation": "I passed the exam.",
+      "naturalMeaning": "States that an exam was successfully completed."
+    },
+    "categories": [
+      "education"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Das Programm funktioniert nicht wie erwartet.",
+      "translation": "The program isn't working as expected.",
+      "naturalMeaning": "A neutral way to describe unexpected software behavior."
+    },
+    "categories": [
+      "technology"
+    ]
+  }
+]
