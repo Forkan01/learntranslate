@@ -1,0 +1,27 @@
+name: V1 Vocabulary Import Validation
+on:
+  pull_request:
+    paths:
+      - 'scripts/build-vocabulary-import.mjs'
+      - 'data/vocabulary/**'
+      - '.github/workflows/v1-vocabulary-import.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/build-vocabulary-import.mjs'
+      - 'data/vocabulary/**'
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate and generate review-only SQL
+        run: |
+          node scripts/build-vocabulary-import.mjs data/vocabulary/starter.json > /tmp/learntranslate-import.sql
+          grep -q "'review'" /tmp/learntranslate-import.sql
+          grep -q 'ON CONFLICT (search_key) DO NOTHING' /tmp/learntranslate-import.sql
+          if grep -Eq "'published'|UPDATE public.cards|DELETE FROM public.cards" /tmp/learntranslate-import.sql; then exit 1; fi
+          echo "Review-only import validated"

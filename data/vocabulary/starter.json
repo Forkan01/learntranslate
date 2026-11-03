@@ -1,0 +1,70 @@
+[
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "word",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "die Absicht",
+      "translation": "intention",
+      "pronunciation": "/ˈapzɪçt/",
+      "grammar": {
+        "partOfSpeech": "noun",
+        "article": "die",
+        "plural": "Absichten"
+      },
+      "examples": [
+        {
+          "source": "Das war nicht meine Absicht.",
+          "translation": "That wasn't my intention."
+        },
+        {
+          "source": "Ich habe die Absicht, Deutsch zu lernen.",
+          "translation": "I intend to learn German."
+        },
+        {
+          "source": "Mit welcher Absicht kommst du?",
+          "translation": "What is your intention in coming?"
+        },
+        {
+          "source": "Sie handelte in guter Absicht.",
+          "translation": "She acted with good intentions."
+        },
+        {
+          "source": "Er erklärte seine Absichten.",
+          "translation": "He explained his intentions."
+        }
+      ],
+      "usageNotes": [
+        "The expression 'die Absicht haben, etwas zu tun' means to intend to do something."
+      ]
+    },
+    "categories": [
+      "conversations",
+      "daily-life"
+    ]
+  },
+  {
+    "content": {
+      "schemaVersion": 1,
+      "type": "sentence",
+      "sourceLanguage": "de",
+      "targetLanguage": "en",
+      "term": "Es kommt darauf an.",
+      "translation": "It depends.",
+      "naturalMeaning": "Used when the answer depends on the circumstances.",
+      "grammarBreakdown": [
+        "'darauf ankommen' is a separable verb construction."
+      ],
+      "alternatives": [
+        {
+          "text": "Das hängt davon ab.",
+          "translation": "That depends on it."
+        }
+      ]
+    },
+    "categories": [
+      "conversations"
+    ]
+  }
+]
