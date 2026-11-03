@@ -1,0 +1,23 @@
+name: V1 Search API Contract
+on:
+  pull_request:
+    paths:
+      - 'src/app/api/cards/search/**'
+      - 'src/lib/cards/schema.ts'
+      - 'tests/v1c2-search-contract.test.mjs'
+      - '.github/workflows/v1-search-contract.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/app/api/cards/search/**'
+      - 'src/lib/cards/schema.ts'
+      - 'tests/v1c2-search-contract.test.mjs'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test tests/v1c2-search-contract.test.mjs
