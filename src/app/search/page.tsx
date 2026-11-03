@@ -32,7 +32,7 @@ export default function CardSearchPage() {
       if (found) break;
       }
       if (found) setResult(found);
-      else setNotice("No published card yet for this search. Try one of the suggested words or sentences below.");
+      else setNotice("No published card yet for this search. Try a suggested phrase, or switch languages.");
     } catch { setNotice("Search is temporarily unavailable. Please try again."); }
     finally { setLoading(false); }
   }
@@ -40,7 +40,7 @@ export default function CardSearchPage() {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(value);
-    utterance.lang = source === "de" ? "de-DE" : "en-US";
+    utterance.lang = result?.content.sourceLanguage === "de" ? "de-DE" : "en-US";
     utterance.rate = 0.85;
     window.speechSynthesis.speak(utterance);
   }
