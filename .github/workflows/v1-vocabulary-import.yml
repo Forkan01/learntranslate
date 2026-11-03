@@ -24,4 +24,7 @@ jobs:
           grep -q "'review'" /tmp/learntranslate-import.sql
           grep -q 'ON CONFLICT (search_key) DO NOTHING' /tmp/learntranslate-import.sql
           if grep -Eq "'published'|UPDATE public.cards|DELETE FROM public.cards" /tmp/learntranslate-import.sql; then exit 1; fi
-          echo "Review-only import validated"
+          node scripts/build-vocabulary-import.mjs data/vocabulary/curated-batch-01.json > /tmp/learntranslate-batch-01.sql
+          test "$(grep -c '^INSERT INTO public.cards' /tmp/learntranslate-batch-01.sql)" -eq 24
+          if grep -Eq "'published'|UPDATE public.cards|DELETE FROM public.cards" /tmp/learntranslate-batch-01.sql; then exit 1; fi
+          echo "Review-only imports validated (starter + 24 curated cards)"
