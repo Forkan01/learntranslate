@@ -61,6 +61,7 @@ export default function CardSearchPage() {
   }
   const card = result?.content;
   return <div className="min-h-screen bg-[#fffaf2] text-[#343d4a]">
+    <div className="mx-auto max-w-3xl px-5"><SessionStatus /></div>
     <header className="border-b-2 border-[#e8e0d6] bg-white/80">
       <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-5">
         <Link href="/" className="text-xl font-black tracking-tight text-[#4f6c77]">✳ LearnTranslate</Link>
