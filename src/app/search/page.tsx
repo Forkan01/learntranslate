@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { LearningCardContent } from "@/lib/cards/schema";
 import GenerationSignIn from "./GenerationSignIn";
+import SessionStatus from "./SessionStatus";
 
 type CardRow = { id: string; content: LearningCardContent };
 type Direction = "de" | "en";
