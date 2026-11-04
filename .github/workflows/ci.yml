@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: node --test tests/v1g5c3-quota-runtime.test.mjs
       - run: node --test tests/v1g6-cost-reservation.test.mjs
+      - run: node --test tests/v1g7a-origin-session.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
