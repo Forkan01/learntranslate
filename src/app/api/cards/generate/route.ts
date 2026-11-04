@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateLearningCard } from "@/lib/cards/generate";
+import { readBoundedJson } from "@/lib/cards/bounded-json";
 import { reserveGenerationAttempt } from "@/lib/cards/generation-budget";
 import { reserveEstimatedGenerationCost } from "@/lib/cards/generation-cost-budget";
 import type { CardLanguage, CardType } from "@/lib/cards/schema";
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Browser generation disabled" }, { status: 403 });
   }
   let body: unknown;
-  try { body = await request.json(); } catch {
+  try { body = await readBoundedJson(request); } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   if (!body || typeof body !== "object" || Array.isArray(body)) {
