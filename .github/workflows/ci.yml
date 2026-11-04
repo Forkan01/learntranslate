@@ -15,6 +15,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - run: node --test tests/v1g5c3-quota-runtime.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
