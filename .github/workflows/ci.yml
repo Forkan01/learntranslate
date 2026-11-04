@@ -22,6 +22,7 @@ jobs:
       - run: node --test tests/v1g7b2-refresh-singleflight.test.mjs
       - run: node --test tests/v1g7b3-logout-revocation.test.mjs
       - run: node --test tests/v1g7c1-verified-abuse.test.mjs
+      - run: node --test tests/v1g7c2-request-payload-guard.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
