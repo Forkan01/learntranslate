@@ -13,10 +13,11 @@ export function allowSameOriginWrite(request: Request): boolean {
     if (actual.username || actual.password || actual.search || actual.hash || actual.pathname !== "/") return false;
     if (actual.protocol !== "https:" && !(actual.protocol === "http:" && actual.hostname === "localhost")) return false;
     const configured = new URL(process.env.NEXT_PUBLIC_APP_URL || "https://learntranslate.vercel.app");
-    const allowed = new Set([configured.origin]);
+    const allowed = new Set<string>();
+    if (process.env.VERCEL_ENV !== "preview") allowed.add(configured.origin);
     // VERCEL_URL is deployment-provided; never derive trust from the incoming Host.
     const deployment = process.env.VERCEL_URL;
-    if (deployment && /^[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.vercel\\.app$/i.test(deployment))
+    if (process.env.VERCEL_ENV === "preview" && deployment && /^[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.vercel\\.app$/i.test(deployment))
       allowed.add("https://" + deployment.toLowerCase());
     return allowed.has(actual.origin);
   } catch { return false; }
