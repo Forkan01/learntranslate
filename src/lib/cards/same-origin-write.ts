@@ -5,7 +5,9 @@
  */
 export function allowSameOriginWrite(request: Request): boolean {
   const origin = request.headers.get("origin");
-  const expected = process.env.NEXT_PUBLIC_APP_URL || "https://learntranslate.vercel.app";
+  const expected = process.env.VERCEL_ENV === "preview" && process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_APP_URL || "https://learntranslate.vercel.app";
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite && fetchSite !== "same-origin" && fetchSite !== "none") return false;
   try {
