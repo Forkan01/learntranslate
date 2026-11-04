@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyGenerationUser } from "@/lib/cards/verified-generation-user";
 import { allowSameOriginWrite } from "@/lib/cards/same-origin-write";
 import { singleFlightRefresh } from "@/lib/cards/refresh-singleflight";
+import { readBoundedJson } from "@/lib/cards/bounded-json";
 
 const ACCESS = "lt_auth_access";
 const REFRESH = "lt_auth_refresh";
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
   const config = authConfig();
   if (!config) return NextResponse.json({ error: "Auth unavailable" }, { status: 503, headers: noStore });
   let body: unknown;
-  try { body = await request.json(); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400 }); }
+  try { body = await readBoundedJson(request, 16384); } catch { return NextResponse.json({ error: "Invalid request" }, { status: 400, headers: noStore }); }
   if (!body || typeof body !== "object" || Array.isArray(body)) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   const { access_token: access, refresh_token: refresh, expires_in: expires } = body as Record<string, unknown>;
   if (typeof access !== "string" || access.length > 8192 || !validRefresh(refresh) || !validExpires(expires))
