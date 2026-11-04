@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generateLearningCard } from "@/lib/cards/generate";
 import { reserveGenerationAttempt } from "@/lib/cards/generation-budget";
+import { reserveEstimatedGenerationCost } from "@/lib/cards/generation-cost-budget";
 import type { CardLanguage, CardType } from "@/lib/cards/schema";
 
 export async function POST(request: Request) {
@@ -48,6 +49,17 @@ export async function POST(request: Request) {
   }
   if (admission !== "allowed") {
     return NextResponse.json({ error: "Generation budget unavailable" }, { status: 503 });
+  }
+  // Reserve conservative estimated spending BEFORE invoking the provider.
+  // A failed provider call still consumes this reservation (safety over utilization).
+  const spending = await reserveEstimatedGenerationCost();
+  if (spending === "limited") {
+    return NextResponse.json({ error: "Generation spending ceiling reached" }, {
+      status: 429, headers: { "Cache-Control": "no-store", "Retry-After": "3600" },
+    });
+  }
+  if (spending !== "allowed") {
+    return NextResponse.json({ error: "Generation spending protection unavailable" }, { status: 503 });
   }
   try {
     const card = await generateLearningCard({
