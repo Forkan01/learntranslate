@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyGenerationUser } from "@/lib/cards/verified-generation-user";
 import { allowSameOriginWrite } from "@/lib/cards/same-origin-write";
+import { singleFlightRefresh } from "@/lib/cards/refresh-singleflight";
 
 const ACCESS = "lt_auth_access";
 const REFRESH = "lt_auth_refresh";
@@ -62,7 +63,8 @@ export async function GET(request: NextRequest) {
     clearCookies(response); return response;
   }
   try {
-    const response = await fetch(config.url + "/auth/v1/token?grant_type=refresh_token", {
+    const tokens = await singleFlightRefresh(refresh, async () => {
+      const response = await fetch(config.url + "/auth/v1/token?grant_type=refresh_token", {
       method: "POST",
       headers: { apikey: config.key, "Content-Type": "application/json" },
       body: JSON.stringify({ refresh_token: refresh }),
@@ -76,8 +78,10 @@ export async function GET(request: NextRequest) {
         !validRefresh(tokens.refresh_token) || !validExpires(tokens.expires_in))
       throw new Error("Invalid tokens");
     if (!await verifyGenerationUser(tokens.access_token)) throw new Error("Invalid user");
+      return { access: tokens.access_token, refresh: tokens.refresh_token, expires: tokens.expires_in };
+    });
     const result = NextResponse.json({ signedIn: true }, { headers: noStore });
-    setCookies(result, tokens.access_token, tokens.refresh_token, tokens.expires_in);
+    setCookies(result, tokens.access, tokens.refresh, tokens.expires);
     return result;
   } catch {
     const result = NextResponse.json({ signedIn: false }, { headers: noStore });
