@@ -3,7 +3,7 @@ export async function readBoundedJson(request: Request, maxBytes = 4096): Promis
   const type = request.headers.get("content-type")?.split(";")[0].trim().toLowerCase();
   if (type !== "application/json") throw new Error("Unsupported content type");
   const length = request.headers.get("content-length");
-  if (length !== null && (!/^\\d+$/.test(length) || Number(length) > maxBytes)) throw new Error("Body too large");
+  if (length !== null && (!/^[0-9]+$/.test(length) || Number(length) > maxBytes)) throw new Error("Body too large");
   if (!request.body) throw new Error("Missing body");
   const reader = request.body.getReader();
   const chunks: Uint8Array[] = [];
