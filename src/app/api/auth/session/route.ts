@@ -109,7 +109,6 @@ export async function DELETE(request: NextRequest) {
     }
   }
   const response = NextResponse.json({ signedIn: false, serverRevoked: revoked }, {
-    status: revoked || !access ? 200 : 503,
     headers: noStore,
   });
   clearCookies(response);
