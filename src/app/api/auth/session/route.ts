@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyGenerationUser } from "@/lib/cards/verified-generation-user";
+import { allowSameOriginWrite } from "@/lib/cards/same-origin-write";
 
 const ACCESS = "lt_auth_access";
 const REFRESH = "lt_auth_refresh";
 const COOKIE = { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" };
-function sameOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
-  const expected = process.env.NEXT_PUBLIC_APP_URL || "https://learntranslate.vercel.app";
-  try { return !!origin && new URL(origin).origin === new URL(expected).origin; }
-  catch { return false; }
-}
 function authConfig() {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -30,7 +25,9 @@ function setCookies(response: NextResponse, access: string, refresh: string, exp
 }
 const noStore = { "Cache-Control": "no-store" };
 export async function POST(request: NextRequest) {
-  if (!sameOrigin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: noStore });
+  if (!allowSameOriginWrite(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: noStore });
+  if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json")
+    return NextResponse.json({ error: "JSON required" }, { status: 415, headers: noStore });
   const config = authConfig();
   if (!config) return NextResponse.json({ error: "Auth unavailable" }, { status: 503, headers: noStore });
   let body: unknown;
@@ -81,7 +78,7 @@ export async function GET(request: NextRequest) {
   }
 }
 export async function DELETE(request: NextRequest) {
-  if (!sameOrigin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: noStore });
+  if (!allowSameOriginWrite(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: noStore });
   const response = NextResponse.json({ signedIn: false }, { headers: noStore });
   clearCookies(response);
   return response;
