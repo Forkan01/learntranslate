@@ -4,7 +4,7 @@
  * Every admitted attempt consumes a slot, even if the provider fails.
  * This is a request ceiling, NOT a monetary spending cap.
  */
-const LUA = [
+export const GENERATION_QUOTA_LUA = [
   "local day = tonumber(redis.call('GET', KEYS[1]) or '0')",
   "local minute = tonumber(redis.call('GET', KEYS[2]) or '0')",
   "if day >= tonumber(ARGV[1]) then return 0 end",
@@ -41,7 +41,7 @@ export async function reserveGenerationAttempt(actorId: string): Promise<"allowe
   const minute = now.toISOString().slice(0, 16);
   const remainingDaySeconds = 86400 - (now.getUTCHours() * 3600 + now.getUTCMinutes() * 60 + now.getUTCSeconds()) + 120;
   // Both global and actor ceilings are checked and incremented atomically.
-  const args = ["EVAL", LUA, "4", "lt:ai:global:day:" + day,
+  const args = ["EVAL", GENERATION_QUOTA_LUA, "4", "lt:ai:global:day:" + day,
     "lt:ai:global:minute:" + minute,
     "lt:ai:actor:" + actorId + ":day:" + day,
     "lt:ai:actor:" + actorId + ":minute:" + minute,
