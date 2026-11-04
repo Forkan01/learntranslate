@@ -90,7 +90,28 @@ export async function GET(request: NextRequest) {
 }
 export async function DELETE(request: NextRequest) {
   if (!allowSameOriginWrite(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: noStore });
-  const response = NextResponse.json({ signedIn: false }, { headers: noStore });
+  // Revoke the current Supabase session when possible, not just browser cookies.
+  // A provider failure cannot be treated as successful server-side revocation.
+  const access = request.cookies.get(ACCESS)?.value;
+  const config = authConfig();
+  let revoked = false;
+  if (access && access.length <= 8192 && /^[A-Za-z0-9._~-]+$/.test(access) && config) {
+    try {
+      const provider = await fetch(config.url + "/auth/v1/logout?scope=local", {
+        method: "POST",
+        headers: { apikey: config.key, Authorization: "Bearer " + access },
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      });
+      revoked = provider.ok;
+    } catch {
+      revoked = false;
+    }
+  }
+  const response = NextResponse.json({ signedIn: false, serverRevoked: revoked }, {
+    status: revoked || !access ? 200 : 503,
+    headers: noStore,
+  });
   clearCookies(response);
   return response;
 }
