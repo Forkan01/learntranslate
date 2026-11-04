@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { allowSameOriginWrite } from "@/lib/cards/same-origin-write";
 import { verifyGenerationUser } from "@/lib/cards/verified-generation-user";
 import { reserveGenerationAttempt } from "@/lib/cards/generation-budget";
+import { reserveVerifiedProbeBurst } from "@/lib/cards/verified-probe-burst";
 
 /**
  * V1-G.5C.2 — quota integration gate, intentionally NOT a public generation route.
@@ -21,6 +22,9 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Sign in required" }, { status: 401, headers });
   // Derive actor from a server-verified user UUID. Never accept caller-supplied actor IDs.
   const actorId = createHash("sha256").update("lt:verified-user:" + user.id).digest("hex");
+  const burst = await reserveVerifiedProbeBurst(actorId);
+  if (burst === "limited") return NextResponse.json({ error: "Too many requests" }, { status: 429, headers: { ...headers, "Retry-After": "10" } });
+  if (burst !== "allowed") return NextResponse.json({ error: "Abuse protection unavailable" }, { status: 503, headers });
   const admission = await reserveGenerationAttempt(actorId);
   if (admission === "limited") return NextResponse.json({ error: "Quota reached" }, { status: 429, headers: { ...headers, "Retry-After": "120" } });
   if (admission !== "allowed") return NextResponse.json({ error: "Quota service unavailable" }, { status: 503, headers });
