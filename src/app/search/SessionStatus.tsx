@@ -21,10 +21,21 @@ export default function SessionStatus() {
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    // Fetch starts asynchronously; no synchronous state update inside the effect.
-    void checkSession(controller.signal);
+    // Start the request directly in the effect, then update state only from async callbacks.
+    fetch("/api/auth/session", { cache: "no-store", signal: controller.signal })
+      .then(async response => {
+        if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
+        const data: unknown = await response.json();
+        if (!data || typeof data !== "object") throw new Error("Invalid session response");
+        const session = data as Record<string, unknown>;
+        if (!controller.signal.aborted) {
+          if (response.status === 503 || session.retryable === true) setStatus("retryable");
+          else setStatus(session.signedIn === true ? "signed-in" : "signed-out");
+        }
+      })
+      .catch(() => { if (!controller.signal.aborted) setStatus("retryable"); });
     return () => controller.abort();
-  }, [checkSession]);
+  }, []);
 
   if (status === "loading" || status === "signed-out") return null;
   if (status === "retryable") return <div role="status" className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#fff1d6] p-3 text-sm text-[#594621]">
