@@ -6,7 +6,7 @@ import Link from "next/link";
 /**
  * Supabase's default email link redirects with tokens in the URL fragment.
  * Verify the access token with Auth before displaying success; never persist it.
- * This preview does not create a durable app session.
+ * The server creates an HttpOnly session after verifying the token pair.
  */
 export default function AuthCallbackPage() {
   const [status, setStatus] = useState("Verifying your email link…");
@@ -47,10 +47,17 @@ export default function AuthCallbackPage() {
           body: JSON.stringify({ access_token: token, refresh_token: refresh, expires_in: expires }),
           cache: "no-store",
         });
-        if (!session.ok) throw new Error("Session exchange failed");
+        if (!session.ok) {
+          if (!cancelled) setStatus(session.status === 403
+            ? "Sign-in could not finish: this deployment rejected the session request."
+            : session.status === 401
+              ? "Sign-in could not finish: the session credentials were rejected. Please request a fresh link."
+              : "Sign-in could not finish: the session service returned an error. Please try again later.");
+          return;
+        }
         if (!cancelled) setStatus("✓ Signed in successfully! AI generation is not enabled yet.");
       } catch {
-        if (!cancelled) setStatus("The link is invalid or expired. Please request a new link.");
+        if (!cancelled) setStatus("Email verification failed or the connection timed out. Please request a fresh link.");
       }
     }
     void verify();

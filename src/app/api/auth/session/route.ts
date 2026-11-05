@@ -3,6 +3,7 @@ import { verifyGenerationUser } from "@/lib/cards/verified-generation-user";
 import { allowSameOriginWrite } from "@/lib/cards/same-origin-write";
 import { singleFlightRefresh } from "@/lib/cards/refresh-singleflight";
 import { readBoundedJson } from "@/lib/cards/bounded-json";
+import { bindSessionTokenPair } from "@/lib/cards/bind-session-token-pair";
 
 const ACCESS = "lt_auth_access";
 const REFRESH = "lt_auth_refresh";
@@ -45,10 +46,12 @@ export async function POST(request: NextRequest) {
   const { access_token: access, refresh_token: refresh, expires_in: expires } = body as Record<string, unknown>;
   if (typeof access !== "string" || access.length > 8192 || !validRefresh(refresh) || !validExpires(expires))
     return NextResponse.json({ error: "Invalid session" }, { status: 400 });
-  const user = await verifyGenerationUser(access);
-  if (!user) return NextResponse.json({ error: "Invalid session" }, { status: 401, headers: noStore });
+  // A valid access token alone cannot authorize an unrelated refresh token.
+  // Supabase rotates the refresh credential; persist only its returned pair.
+  const bound = await bindSessionTokenPair(access, refresh, config);
+  if (!bound) return NextResponse.json({ error: "Invalid session" }, { status: 401, headers: noStore });
   const response = NextResponse.json({ signedIn: true }, { headers: noStore });
-  setCookies(response, access, refresh, expires);
+  setCookies(response, bound.access, bound.refresh, bound.expires);
   return response;
 }
 export async function GET(request: NextRequest) {

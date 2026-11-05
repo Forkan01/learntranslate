@@ -16,6 +16,6 @@ test("session creation checks same-origin and JSON type before bounded read and 
   const post = route.slice(route.indexOf("export async function POST("), route.indexOf("export async function GET("));
   assert.ok(post.includes("readBoundedJson(request, 16384)"));
   assert.ok(post.indexOf("allowSameOriginWrite(request)") < post.indexOf("readBoundedJson(request, 16384)"));
-  assert.ok(post.indexOf("readBoundedJson(request, 16384)") < post.indexOf("verifyGenerationUser(access)"));
+  assert.ok(post.indexOf("readBoundedJson(request, 16384)") < post.indexOf("bindSessionTokenPair(access, refresh, config)"));
   assert.ok(!post.includes("await request.json()"));
 });
