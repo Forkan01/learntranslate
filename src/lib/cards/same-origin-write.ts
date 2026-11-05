@@ -15,7 +15,14 @@ export function allowSameOriginWrite(request: Request): boolean {
     const configured = new URL(process.env.NEXT_PUBLIC_APP_URL || "https://learntranslate.vercel.app");
     const allowed = new Set<string>();
     if (process.env.VERCEL_ENV !== "preview") allowed.add(configured.origin);
-    // VERCEL_URL is the immutable deployment host; VERCEL_BRANCH_URL is the\n    // stable branch alias used by the GitHub Preview link. Both are platform-provided.\n    if (process.env.VERCEL_ENV === "preview") {\n      for (const deployment of [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]) {\n        if (deployment && /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.vercel\.app$/i.test(deployment))\n          allowed.add("https://" + deployment.toLowerCase());\n      }\n    }
+    // VERCEL_URL is the immutable deployment host; VERCEL_BRANCH_URL is the
+    // stable branch alias used by the GitHub Preview link. Both are platform-provided.
+    if (process.env.VERCEL_ENV === "preview") {
+      for (const deployment of [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]) {
+        if (deployment && /^[a-z0-9-]+(?:\.[a-z0-9-]+)*\.vercel\.app$/i.test(deployment))
+          allowed.add("https://" + deployment.toLowerCase());
+      }
+    }
     return allowed.has(actual.origin);
   } catch { return false; }
 }
