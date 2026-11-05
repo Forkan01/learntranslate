@@ -26,6 +26,7 @@ jobs:
       - run: node --test tests/v1g7d2a-bounded-session.test.mjs
       - run: node --test tests/v1g7d2b-session-token-pair.test.mjs
       - run: node --test tests/v1g7d2b-preview-auth.test.mjs
+      - run: node --test tests/v1g7d2c-transient-refresh.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
