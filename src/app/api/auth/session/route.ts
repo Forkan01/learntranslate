@@ -34,6 +34,7 @@ function setCookies(response: NextResponse, access: string, refresh: string, exp
   response.cookies.set(REFRESH, refresh, { ...COOKIE, maxAge: 60 * 60 * 24 * 7 });
 }
 const noStore = { "Cache-Control": "no-store" };
+class InvalidRefreshCredentialError extends Error {}
 export async function POST(request: NextRequest) {
   if (!allowSameOriginWrite(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: noStore });
   if (request.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json")
@@ -62,10 +63,12 @@ export async function GET(request: NextRequest) {
   }
   const refresh = request.cookies.get(REFRESH)?.value;
   const config = authConfig();
-  if (!validRefresh(refresh) || !config) {
+  if (!validRefresh(refresh)) {
     const response = NextResponse.json({ signedIn: false }, { headers: noStore });
     clearCookies(response); return response;
   }
+  // Configuration failures are transient: retain refresh credentials for retry.
+  if (!config) return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
   try {
     const tokens = await singleFlightRefresh(refresh, async () => {
       const response = await fetch(config.url + "/auth/v1/token?grant_type=refresh_token", {
@@ -74,7 +77,10 @@ export async function GET(request: NextRequest) {
       body: JSON.stringify({ refresh_token: refresh }),
       cache: "no-store", signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) throw new Error("Refresh failed");
+    if (response.status === 400 || response.status === 401 || response.status === 403) {
+      throw new InvalidRefreshCredentialError();
+    }
+    if (!response.ok) throw new Error("Refresh temporarily unavailable");
     const data: unknown = await response.json();
     if (!data || typeof data !== "object") throw new Error("Invalid response");
     const tokens = data as Record<string, unknown>;
@@ -87,9 +93,14 @@ export async function GET(request: NextRequest) {
     const result = NextResponse.json({ signedIn: true }, { headers: noStore });
     setCookies(result, tokens.access, tokens.refresh, tokens.expires);
     return result;
-  } catch {
-    const result = NextResponse.json({ signedIn: false }, { headers: noStore });
-    clearCookies(result); return result;
+  } catch (error) {
+    if (error instanceof InvalidRefreshCredentialError) {
+      const result = NextResponse.json({ signedIn: false }, { headers: noStore });
+      clearCookies(result); return result;
+    }
+    // Network failures, provider 5xx/429, and malformed provider responses
+    // must not destroy a potentially valid session. Never claim signed-in.
+    return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
   }
 }
 export async function DELETE(request: NextRequest) {
