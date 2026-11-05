@@ -1,23 +1,58 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+type SessionState = "loading" | "signed-in" | "signed-out" | "retryable";
 export default function SessionStatus() {
-  const [signedIn, setSignedIn] = useState(false);
-  useEffect(() => {
-    let active = true;
-    fetch("/api/auth/session", { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (active) setSignedIn(data?.signedIn === true); })
-      .catch(() => {});
-    return () => { active = false; };
+  const [status, setStatus] = useState<SessionState>("loading");
+  const [checking, setChecking] = useState(false);
+  const checkSession = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch("/api/auth/session", { cache: "no-store", signal });
+      if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
+      const data: unknown = await response.json();
+      if (signal?.aborted) return;
+      if (!data || typeof data !== "object") throw new Error("Invalid session response");
+      const session = data as Record<string, unknown>;
+      if (response.status === 503 || session.retryable === true) setStatus("retryable");
+      else setStatus(session.signedIn === true ? "signed-in" : "signed-out");
+    } catch {
+      if (!signal?.aborted) setStatus("retryable");
+    }
   }, []);
-  if (!signedIn) return null;
+  useEffect(() => {
+    const controller = new AbortController();
+    // Start the request directly in the effect, then update state only from async callbacks.
+    fetch("/api/auth/session", { cache: "no-store", signal: controller.signal })
+      .then(async response => {
+        if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
+        const data: unknown = await response.json();
+        if (!data || typeof data !== "object") throw new Error("Invalid session response");
+        const session = data as Record<string, unknown>;
+        if (!controller.signal.aborted) {
+          if (response.status === 503 || session.retryable === true) setStatus("retryable");
+          else setStatus(session.signedIn === true ? "signed-in" : "signed-out");
+        }
+      })
+      .catch(() => { if (!controller.signal.aborted) setStatus("retryable"); });
+    return () => controller.abort();
+  }, []);
+
+  if (status === "loading" || status === "signed-out") return null;
+  if (status === "retryable") return <div role="status" className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#fff1d6] p-3 text-sm text-[#594621]">
+    <span>Session check temporarily unavailable. Your sign-in may still be valid.</span>
+    <button type="button" disabled={checking} className="rounded-lg border border-[#ad9466] px-3 py-2 font-semibold disabled:opacity-50"
+      onClick={async () => {
+        setChecking(true);
+        try { await checkSession(); } finally { setChecking(false); }
+      }}>{checking ? "Checking…" : "Retry"}</button>
+  </div>;
   return <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#e4f0e9] p-3 text-sm text-[#28443b]">
     <span>✓ Signed in for future AI access</span>
     <button type="button" className="rounded-lg border border-[#668d84] px-3 py-2 font-semibold"
       onClick={async () => {
         try {
           const response = await fetch("/api/auth/session", { method: "DELETE" });
-          if (response.ok) setSignedIn(false);
+          if (response.ok) setStatus("signed-out");
         } catch { /* Keep status until server confirms sign-out. */ }
       }}>Sign out</button>
   </div>;
