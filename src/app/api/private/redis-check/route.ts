@@ -13,7 +13,7 @@ function matchesToken(actual: string | null, expected: string): boolean {
 export async function POST(request: Request) {
   if (process.env.ENABLE_PRIVATE_REDIS_DIAGNOSTIC !== "true")
     return NextResponse.json({ error: "Disabled" }, { status: 404, headers });
-  const expected = process.env.CARD_GENERATION_ADMIN_TOKEN;
+  const expected = process.env.REDIS_DIAGNOSTIC_TOKEN;
   if (!expected || expected.length < 32 || !matchesToken(request.headers.get("authorization"), expected))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers });
   if (request.headers.has("origin"))
