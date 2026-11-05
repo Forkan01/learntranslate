@@ -28,6 +28,7 @@ jobs:
       - run: node --test tests/v1g7d2b-preview-auth.test.mjs
       - run: node --test tests/v1g7d2c-transient-refresh.test.mjs
       - run: node --test tests/v1g7d2d1-refresh-retry-ui.test.mjs
+      - run: node --test tests/v1g7d2d2-redis-connectivity.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
