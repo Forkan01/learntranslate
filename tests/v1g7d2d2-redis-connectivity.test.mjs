@@ -36,7 +36,7 @@ test("invalid URL, provider errors and malformed responses fail closed", async (
 test("diagnostic requires explicit enablement and private authorization", () => {
   const route = readFileSync(new URL("../src/app/api/private/redis-check/route.ts", import.meta.url), "utf8");
   assert.match(route, /ENABLE_PRIVATE_REDIS_DIAGNOSTIC/);
-  assert.match(route, /CARD_GENERATION_ADMIN_TOKEN/);
+  assert.match(route, /REDIS_DIAGNOSTIC_TOKEN/);
   assert.match(route, /timingSafeEqual/);
   assert.match(route, /request\.headers\.has\("origin"\)/);
 });
