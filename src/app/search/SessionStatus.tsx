@@ -6,7 +6,6 @@ export default function SessionStatus() {
   const [status, setStatus] = useState<SessionState>("loading");
   const [checking, setChecking] = useState(false);
   const checkSession = useCallback(async (signal?: AbortSignal) => {
-    setChecking(true);
     try {
       const response = await fetch("/api/auth/session", { cache: "no-store", signal });
       if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
@@ -18,12 +17,11 @@ export default function SessionStatus() {
       else setStatus(session.signedIn === true ? "signed-in" : "signed-out");
     } catch {
       if (!signal?.aborted) setStatus("retryable");
-    } finally {
-      if (!signal?.aborted) setChecking(false);
     }
   }, []);
   useEffect(() => {
     const controller = new AbortController();
+    // Fetch starts asynchronously; no synchronous state update inside the effect.
     void checkSession(controller.signal);
     return () => controller.abort();
   }, [checkSession]);
@@ -32,7 +30,10 @@ export default function SessionStatus() {
   if (status === "retryable") return <div role="status" className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#fff1d6] p-3 text-sm text-[#594621]">
     <span>Session check temporarily unavailable. Your sign-in may still be valid.</span>
     <button type="button" disabled={checking} className="rounded-lg border border-[#ad9466] px-3 py-2 font-semibold disabled:opacity-50"
-      onClick={() => void checkSession()}>{checking ? "Checking…" : "Retry"}</button>
+      onClick={async () => {
+        setChecking(true);
+        try { await checkSession(); } finally { setChecking(false); }
+      }}>{checking ? "Checking…" : "Retry"}</button>
   </div>;
   return <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#e4f0e9] p-3 text-sm text-[#28443b]">
     <span>✓ Signed in for future AI access</span>
