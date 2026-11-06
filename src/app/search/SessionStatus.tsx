@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { checkBrowserSession, signOutBrowserSession } from "@/lib/cards/browser-session-queue";
 
 type SessionState = "loading" | "signed-in" | "signed-out" | "retryable";
 export default function SessionStatus() {
@@ -7,7 +8,7 @@ export default function SessionStatus() {
   const [checking, setChecking] = useState(false);
   const checkSession = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await fetch("/api/auth/session", { cache: "no-store", signal });
+      const response = await checkBrowserSession(signal);
       if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
       const data: unknown = await response.json();
       if (signal?.aborted) return;
@@ -22,7 +23,7 @@ export default function SessionStatus() {
   useEffect(() => {
     const controller = new AbortController();
     // Start the request directly in the effect, then update state only from async callbacks.
-    fetch("/api/auth/session", { cache: "no-store", signal: controller.signal })
+    checkBrowserSession(controller.signal)
       .then(async response => {
         if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
         const data: unknown = await response.json();
@@ -51,7 +52,7 @@ export default function SessionStatus() {
     <button type="button" className="rounded-lg border border-[#668d84] px-3 py-2 font-semibold"
       onClick={async () => {
         try {
-          const response = await fetch("/api/auth/session", { method: "DELETE" });
+          const response = await signOutBrowserSession();
           if (response.ok) setStatus("signed-out");
         } catch { /* Keep status until server confirms sign-out. */ }
       }}>Sign out</button>
