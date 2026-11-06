@@ -32,6 +32,7 @@ jobs:
       - run: node --test tests/v1g7d2d3b-refresh-primitives.test.mjs
       - run: node --test tests/v1g7d2d3c-redis-lease-client.test.mjs
       - run: node --test tests/v1g7d2d3d-independent-workers.test.mjs
+      - run: node --test tests/v1g7d2d3e-refresh-coordinator.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
