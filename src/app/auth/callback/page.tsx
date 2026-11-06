@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { serializeSessionRequest } from "@/lib/cards/browser-session-queue";
 
 /**
  * Supabase's default email link redirects with tokens in the URL fragment.
@@ -41,12 +42,12 @@ export default function AuthCallbackPage() {
         if (!user || typeof user !== "object" || !("id" in user) ||
             typeof (user as { id: unknown }).id !== "string" ||
             (user as { is_anonymous?: boolean }).is_anonymous === true) throw new Error("Invalid user");
-        const session = await fetch("/api/auth/session", {
+        const session = await serializeSessionRequest(() => fetch("/api/auth/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: token, refresh_token: refresh, expires_in: expires }),
           cache: "no-store",
-        });
+        }));
         if (!session.ok) {
           if (!cancelled) setStatus(session.status === 403
             ? "Sign-in could not finish: this deployment rejected the session request."
