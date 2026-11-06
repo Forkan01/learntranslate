@@ -11,7 +11,7 @@ export function serializeSessionRequest<T>(request: () => Promise<T>): Promise<T
     const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
     if (locks && typeof locks.request === "function") {
       // Do not silently bypass a rejected lock acquisition.
-      return await locks.request<T>(LOCK_NAME, { mode: "exclusive" }, async () => await request());
+      return await locks.request(LOCK_NAME, { mode: "exclusive" }, async () => await request());
     }
     // Browser fallback: tab-local serialization only.
     return await request();
