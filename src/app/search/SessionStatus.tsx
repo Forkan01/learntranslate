@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { serializeSessionRequest } from "@/lib/cards/browser-session-queue";
+import { announceSignOut, subscribeSessionNotices } from "@/lib/cards/browser-session-notices";
 
 type SessionState = "loading" | "signed-in" | "signed-out" | "retryable";
 export default function SessionStatus() {
@@ -35,6 +36,24 @@ export default function SessionStatus() {
     };
   }, [checkSession]);
 
+  useEffect(() => {
+    const epochRef = requestEpoch;
+    const unsubscribe = subscribeSessionNotices(() => {
+      // Never trust a cross-tab message as authentication evidence.
+      // Invalidate older UI updates, then ask the server again.
+      epochRef.current++;
+      void checkSession();
+    });
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void checkSession();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      unsubscribe();
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [checkSession]);
+
   if (status === "loading" || status === "signed-out") return null;
   if (status === "retryable") return <div role="status" className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-[#fff1d6] p-3 text-sm text-[#594621]">
     <span>Session check temporarily unavailable. Your sign-in may still be valid.</span>
@@ -51,7 +70,10 @@ export default function SessionStatus() {
         try {
           requestEpoch.current++;
           const response = await serializeSessionRequest(() => fetch("/api/auth/session", { method: "DELETE" }));
-          if (response.ok) setStatus("signed-out");
+          if (response.ok) {
+            setStatus("signed-out");
+            announceSignOut();
+          }
         } catch { /* Keep status until server confirms sign-out. */ }
       }}>Sign out</button>
   </div>;
