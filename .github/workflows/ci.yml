@@ -39,6 +39,7 @@ jobs:
       - run: node --test tests/v1g7d2d3i-secure-adapter-behavior.test.mjs
       - run: node --test tests/v1g7d2d3j-session-identity-binding.test.mjs
       - run: node --test tests/v1g7d2d3k-identity-binding-route.test.mjs
+      - run: node --test tests/v1g7d2d3l-concurrency-regression.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
