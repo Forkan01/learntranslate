@@ -48,6 +48,7 @@ jobs:
       - run: node --test tests/v1g7d2d3r-cross-tab-web-lock.test.mjs
       - run: node --test tests/v1g7d2d4-signout-race.test.mjs
       - run: node --test tests/v1g7d2d5-online-session-recovery.test.mjs
+      - run: node --test tests/v1g7d2d6-stale-callback-guard.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
