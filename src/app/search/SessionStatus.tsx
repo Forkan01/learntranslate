@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { serializeSessionRequest } from "@/lib/cards/browser-session-queue";
 import { announceSignOut, subscribeSessionNotices } from "@/lib/cards/browser-session-notices";
+import { interpretSessionResponse } from "@/lib/cards/session-recovery-state";
 
 type SessionState = "loading" | "signed-in" | "signed-out" | "retryable";
 export default function SessionStatus() {
@@ -12,13 +13,9 @@ export default function SessionStatus() {
     const epoch = ++requestEpoch.current;
     try {
       const response = await serializeSessionRequest(() => fetch("/api/auth/session", { cache: "no-store", signal }));
-      if (!response.ok && response.status !== 503) throw new Error("Session check unavailable");
       const data: unknown = await response.json();
       if (signal?.aborted || epoch !== requestEpoch.current) return;
-      if (!data || typeof data !== "object") throw new Error("Invalid session response");
-      const session = data as Record<string, unknown>;
-      if (response.status === 503 || session.retryable === true) setStatus("retryable");
-      else setStatus(session.signedIn === true ? "signed-in" : "signed-out");
+      setStatus(interpretSessionResponse(response.status, data));
     } catch {
       if (!signal?.aborted && epoch === requestEpoch.current) setStatus("retryable");
     }
