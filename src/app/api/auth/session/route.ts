@@ -6,9 +6,11 @@ import { readBoundedJson } from "@/lib/cards/bounded-json";
 import { bindSessionTokenPair } from "@/lib/cards/bind-session-token-pair";
 import { coordinateSecureRedisRefresh } from "@/lib/cards/secure-redis-refresh-adapter";
 import { decideDistributedRefresh } from "@/lib/cards/distributed-refresh-decision";
+import { issueSessionIdentityBinding, verifySessionIdentityBinding } from "@/lib/cards/session-identity-binding";
 
 const ACCESS = "lt_auth_access";
 const REFRESH = "lt_auth_refresh";
+const IDENTITY = "lt_auth_identity";
 function validRefresh(value: unknown): value is string {
   return typeof value === "string" && value.length >= 8 && value.length <= 8192 &&
     /^[A-Za-z0-9._~-]+$/.test(value);
@@ -30,10 +32,22 @@ function authConfig() {
 function clearCookies(response: NextResponse) {
   response.cookies.set(ACCESS, "", { ...COOKIE, maxAge: 0 });
   response.cookies.set(REFRESH, "", { ...COOKIE, maxAge: 0 });
+  response.cookies.set(IDENTITY, "", { ...COOKIE, maxAge: 0 });
 }
 function setCookies(response: NextResponse, access: string, refresh: string, expiresIn: number) {
   response.cookies.set(ACCESS, access, { ...COOKIE, maxAge: Math.min(Math.max(expiresIn - 30, 1), 3600) });
   response.cookies.set(REFRESH, refresh, { ...COOKIE, maxAge: 60 * 60 * 24 * 7 });
+}
+// Optional until rollout: never change existing auth behavior when keys are absent.
+async function setIdentityBinding(response: NextResponse, access: string, refresh: string): Promise<boolean> {
+  const user = await verifyGenerationUser(access);
+  const binding = user ? issueSessionIdentityBinding(user.id, refresh) : null;
+  if (!binding) {
+    response.cookies.set(IDENTITY, "", { ...COOKIE, maxAge: 0 });
+    return false;
+  }
+  response.cookies.set(IDENTITY, binding, { ...COOKIE, maxAge: 60 * 60 * 24 * 7 });
+  return true;
 }
 const noStore = { "Cache-Control": "no-store" };
 class InvalidRefreshCredentialError extends Error {}
@@ -55,6 +69,7 @@ export async function POST(request: NextRequest) {
   if (!bound) return NextResponse.json({ error: "Invalid session" }, { status: 401, headers: noStore });
   const response = NextResponse.json({ signedIn: true }, { headers: noStore });
   setCookies(response, bound.access, bound.refresh, bound.expires);
+  await setIdentityBinding(response, bound.access, bound.refresh);
   return response;
 }
 export async function GET(request: NextRequest) {
@@ -74,9 +89,12 @@ export async function GET(request: NextRequest) {
   // Experimental distributed refresh is disabled unless explicitly enabled.
   // Do not activate until identity binding and real multi-instance tests are complete.
   if (process.env.ENABLE_DISTRIBUTED_SESSION_REFRESH === "true") {
+    const expectedUserId = verifySessionIdentityBinding(request.cookies.get(IDENTITY)?.value ?? "", refresh);
+    if (!expectedUserId)
+      return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
     const outcome = await coordinateSecureRedisRefresh({
       refreshToken: refresh,
-      verifyPair: async (pair) => Boolean(await verifyGenerationUser(pair.access)),
+      verifyPair: async (pair) => (await verifyGenerationUser(pair.access))?.id === expectedUserId,
       refreshProvider: async () => {
         const provider = await fetch(config.url + "/auth/v1/token?grant_type=refresh_token", {
           method: "POST",
@@ -99,7 +117,11 @@ export async function GET(request: NextRequest) {
     if (decision.kind !== "set")
       return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
     const result = NextResponse.json({ signedIn: true }, { headers: noStore });
+    const newBinding = issueSessionIdentityBinding(expectedUserId, decision.refresh);
+    if (!newBinding)
+      return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
     setCookies(result, decision.access, decision.refresh, decision.expires);
+    result.cookies.set(IDENTITY, newBinding, { ...COOKIE, maxAge: 60 * 60 * 24 * 7 });
     return result;
   }
   try {
@@ -125,6 +147,7 @@ export async function GET(request: NextRequest) {
     });
     const result = NextResponse.json({ signedIn: true }, { headers: noStore });
     setCookies(result, tokens.access, tokens.refresh, tokens.expires);
+    await setIdentityBinding(result, tokens.access, tokens.refresh);
     return result;
   } catch (error) {
     if (error instanceof InvalidRefreshCredentialError) {

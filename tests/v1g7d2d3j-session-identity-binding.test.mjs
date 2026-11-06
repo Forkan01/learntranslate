@@ -37,7 +37,7 @@ test("missing secrets and malformed identities cannot issue or verify", () => {
 });
 test("identity binding is not yet wired to live auth", () => {
   const route = readFileSync(new URL("../src/app/api/auth/session/route.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(route, /issueSessionIdentityBinding|verifySessionIdentityBinding/);
+  assert.match(route, /issueSessionIdentityBinding|verifySessionIdentityBinding/);
 });
 test.after(() => {
   for (const [name, value] of [["SESSION_REFRESH_IDENTITY_KEY", original.identity], ["SESSION_IDENTITY_BINDING_KEY", original.binding]]) {
