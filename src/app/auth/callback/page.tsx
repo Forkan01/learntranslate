@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { callbackIsStale, signOutMarker } from "@/lib/cards/browser-signout-intent";
 import { serializeSessionRequest } from "@/lib/cards/browser-session-queue";
 
 /**
@@ -14,6 +15,7 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     let cancelled = false;
     async function verify() {
+      const initialSignOutMarker = signOutMarker();
       const hash = new URLSearchParams(window.location.hash.slice(1));
       // Remove credentials from the visible URL immediately, including on error.
       window.history.replaceState(null, "", "/auth/callback");
@@ -42,12 +44,15 @@ export default function AuthCallbackPage() {
         if (!user || typeof user !== "object" || !("id" in user) ||
             typeof (user as { id: unknown }).id !== "string" ||
             (user as { is_anonymous?: boolean }).is_anonymous === true) throw new Error("Invalid user");
-        const session = await serializeSessionRequest(() => fetch("/api/auth/session", {
+        const session = await serializeSessionRequest(() => {
+          if (cancelled || callbackIsStale(initialSignOutMarker)) throw new Error("Sign-in cancelled after sign-out");
+          return fetch("/api/auth/session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ access_token: token, refresh_token: refresh, expires_in: expires }),
           cache: "no-store",
-        }));
+          });
+        });
         if (!session.ok) {
           if (!cancelled) setStatus(session.status === 403
             ? "Sign-in could not finish: this deployment rejected the session request."
