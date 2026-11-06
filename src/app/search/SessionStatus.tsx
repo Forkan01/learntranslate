@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { markSignOutIntent } from "@/lib/cards/browser-signout-intent";
 import { serializeSessionRequest } from "@/lib/cards/browser-session-queue";
 import { announceSignOut, subscribeSessionNotices } from "@/lib/cards/browser-session-notices";
 import { interpretSessionResponse } from "@/lib/cards/session-recovery-state";
@@ -72,6 +73,7 @@ export default function SessionStatus() {
       onClick={async () => {
         if (signingOut.current) return;
         signingOut.current = true;
+        markSignOutIntent();
         requestEpoch.current++;
         try {
           const response = await serializeSessionRequest(() => fetch("/api/auth/session", { method: "DELETE" }));
