@@ -25,15 +25,14 @@ export default function CardSearchPage() {
     try {
       const target = source === "de" ? "en" : "de";
       let found: CardRow | null = null;
-      for (const candidate of [...new Set([term.trim(), term.trim().replace(/^(?:der|die|das)\s+/iu, "")])]) {
+      // The API already handles German noun articles and curated plurals.
+      // Avoid retrying a stripped term and repeating expensive database lookups.
       for (const type of ["word", "sentence"]) {
-        const query = new URLSearchParams({ term: candidate, source, target, type });
+        const query = new URLSearchParams({ term: term.trim(), source, target, type });
         const response = await fetch("/api/cards/search?" + query, { cache: "no-store" });
         if (!response.ok) throw new Error("Search unavailable");
         const payload: { found: boolean; card: { id: string; content: LearningCardContent } | null } = await response.json();
         if (payload.found && payload.card) { found = payload.card; break; }
-      }
-      if (found) break;
       }
       if (found) setResult(found);
       else setMissing(true);
