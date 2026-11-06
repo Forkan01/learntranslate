@@ -23,6 +23,12 @@ test("malformed provider results cannot issue cookies", () => {
     assert.deepEqual(decideDistributedRefresh({ kind: "success", pair: bad }), { kind: "retryable" });
   }
 });
-test("legacy invalid refresh still clears cookies: unresolved cross-instance race is documented", () => {
-  assert.match(route, /if \(error instanceof InvalidRefreshCredentialError\)[\s\S]*?clearCookies\(result\)/);
+test("legacy rejected refresh is retryable without clearing cookies", () => {
+  const start = route.indexOf("if (error instanceof InvalidRefreshCredentialError)");
+  const end = route.indexOf("// Network failures", start);
+  assert.ok(start > 0 && end > start);
+  const branch = route.slice(start, end);
+  assert.match(branch, /retryable: true/);
+  assert.match(branch, /status: 503/);
+  assert.doesNotMatch(branch, /clearCookies/);
 });
