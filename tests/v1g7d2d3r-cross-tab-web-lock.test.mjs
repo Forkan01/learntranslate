@@ -5,17 +5,26 @@ import ts from "typescript";
 const source = readFileSync(new URL("../src/lib/cards/browser-session-queue.ts", import.meta.url), "utf8");
 const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }).outputText;
 const { serializeSessionRequest } = await import("data:text/javascript;base64," + Buffer.from(js).toString("base64"));
+// Node.js may expose navigator as a getter-only global. Override its descriptor
+// for each test and restore it exactly, including when an assertion fails.
+function mockNavigator(value) {
+  const original = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", { configurable: true, writable: true, value });
+  return () => {
+    if (original) Object.defineProperty(globalThis, "navigator", original);
+    else Reflect.deleteProperty(globalThis, "navigator");
+  };
+}
 test("Web Lock holds until request resolves and serializes concurrent operations", async () => {
-  const previous = globalThis.navigator;
   const calls = [];
   let lockTail = Promise.resolve();
-  globalThis.navigator = { locks: { request: (name, options, callback) => {
+  const restoreNavigator = mockNavigator({ locks: { request: (name, options, callback) => {
     assert.equal(name, "lt:auth:session-cookie-operations:v1");
     assert.equal(options.mode, "exclusive");
     const result = lockTail.then(callback);
     lockTail = result.then(() => undefined, () => undefined);
     return result;
-  } } };
+  } } });
   try {
     let release;
     const gate = new Promise(resolve => { release = resolve; });
@@ -26,12 +35,11 @@ test("Web Lock holds until request resolves and serializes concurrent operations
     release();
     await Promise.all([first, second]);
     assert.deepEqual(calls, ["first-start", "first-end", "second"]);
-  } finally { globalThis.navigator = previous; }
+  } finally { restoreNavigator(); }
 });
 test("lock failures propagate, subsequent operations can recover", async () => {
-  const previous = globalThis.navigator;
   let fail = true;
-  globalThis.navigator = { locks: { request: async (_name, _opts, cb) => {
+  const restoreNavigator = mockNavigator({ locks: { request: async (_name, _opts, cb) => {
     if (fail) { fail = false; throw new Error("lock denied"); }
     return cb();
   } } };
