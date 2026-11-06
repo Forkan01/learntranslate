@@ -7,14 +7,14 @@ let tail: Promise<void> = Promise.resolve();
 const LOCK_NAME = "lt:auth:session-cookie-operations:v1";
 
 export function serializeSessionRequest<T>(request: () => Promise<T>): Promise<T> {
-  const execute = () => {
+  const execute = async (): Promise<T> => {
     const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
     if (locks && typeof locks.request === "function") {
       // Do not silently bypass a rejected lock acquisition.
-      return locks.request(LOCK_NAME, { mode: "exclusive" }, request);
+      return await locks.request<T>(LOCK_NAME, { mode: "exclusive" }, async () => await request());
     }
     // Browser fallback: tab-local serialization only.
-    return request();
+    return await request();
   };
   const current = tail.then(execute, execute);
   tail = current.then(() => undefined, () => undefined);
