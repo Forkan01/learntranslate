@@ -151,8 +151,10 @@ export async function GET(request: NextRequest) {
     return result;
   } catch (error) {
     if (error instanceof InvalidRefreshCredentialError) {
-      const result = NextResponse.json({ signedIn: false }, { headers: noStore });
-      clearCookies(result); return result;
+      // A different server instance may have already rotated this refresh token.
+      // Never clear browser cookies based solely on a rejected refresh attempt:
+      // an older response could otherwise erase a newer valid session.
+      return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
     }
     // Network failures, provider 5xx/429, and malformed provider responses
     // must not destroy a potentially valid session. Never claim signed-in.
