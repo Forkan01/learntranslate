@@ -51,6 +51,6 @@ test("lock failures propagate, subsequent operations can recover", async () => {
 test("callback POST uses same queue as GET and DELETE", () => {
   const callback = readFileSync(new URL("../src/app/auth/callback/page.tsx", import.meta.url), "utf8");
   const status = readFileSync(new URL("../src/app/search/SessionStatus.tsx", import.meta.url), "utf8");
-  assert.match(callback, /serializeSessionRequest\(\(\) => fetch\("\/api\/auth\/session"/);
+  assert.match(callback, /serializeSessionRequest\(\(\) => \{[\s\S]*?return fetch\("\/api\/auth\/session"/);
   assert.match(status, /serializeSessionRequest\(\(\) => fetch\("\/api\/auth\/session"/);
 });
