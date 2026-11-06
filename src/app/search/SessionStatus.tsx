@@ -24,10 +24,14 @@ export default function SessionStatus() {
   }, []);
   useEffect(() => {
     const controller = new AbortController();
-    void checkSession(controller.signal);
+    // Schedule the async check after effect setup; avoid synchronous state updates.
+    void Promise.resolve().then(() => {
+      if (!controller.signal.aborted) return checkSession(controller.signal);
+    });
+    const epochRef = requestEpoch;
     return () => {
       controller.abort();
-      requestEpoch.current++;
+      epochRef.current++;
     };
   }, [checkSession]);
 
