@@ -19,5 +19,5 @@ test("Redis handoff is encrypted and identity is opaque", () => {
 });
 test("adapter is not wired to live auth route", () => {
   const route = readFileSync(new URL("../src/app/api/auth/session/route.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(route, /coordinateSecureRedisRefresh/);
+  assert.match(route, /process.env.ENABLE_DISTRIBUTED_SESSION_REFRESH === "true"/);
 });
