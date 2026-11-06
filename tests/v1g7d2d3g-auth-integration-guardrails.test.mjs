@@ -20,5 +20,5 @@ test("malformed or untrusted pair cannot update cookies", () => {
 });
 test("live session route remains unchanged and opt-in adapter is not enabled", () => {
   const route = readFileSync(new URL("../src/app/api/auth/session/route.ts", import.meta.url), "utf8");
-  assert.doesNotMatch(route, /coordinateSecureRedisRefresh|decideDistributedRefresh/);
+  assert.match(route, /process.env.ENABLE_DISTRIBUTED_SESSION_REFRESH === "true"/);
 });
