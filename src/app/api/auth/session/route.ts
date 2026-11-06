@@ -41,9 +41,11 @@ function setCookies(response: NextResponse, access: string, refresh: string, exp
 // Optional until rollout: never change existing auth behavior when keys are absent.
 async function setIdentityBinding(response: NextResponse, access: string, refresh: string): Promise<boolean> {
   const user = await verifyGenerationUser(access);
-  if (!user) return false;
-  const binding = issueSessionIdentityBinding(user.id, refresh);
-  if (!binding) return false;
+  const binding = user ? issueSessionIdentityBinding(user.id, refresh) : null;
+  if (!binding) {
+    response.cookies.set(IDENTITY, "", { ...COOKIE, maxAge: 0 });
+    return false;
+  }
   response.cookies.set(IDENTITY, binding, { ...COOKIE, maxAge: 60 * 60 * 24 * 7 });
   return true;
 }
