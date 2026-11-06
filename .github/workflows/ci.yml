@@ -50,6 +50,7 @@ jobs:
       - run: node --test tests/v1g7d2d5-online-session-recovery.test.mjs
       - run: node --test tests/v1g7d2d6-stale-callback-guard.test.mjs
       - run: node --test tests/v1g7d2d7-auth-verification.test.mjs
+      - run: node --test tests/v1h1-reverse-search-whitespace.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
