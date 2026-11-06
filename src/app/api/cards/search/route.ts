@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       if (!reverseResponse.ok) throw new Error("Reverse lookup failed");
       const reverseRows: unknown = await reverseResponse.json();
       if (!Array.isArray(reverseRows)) throw new Error("Invalid reverse response");
-      const wanted = term.normalize("NFKC").trim().replace(/\s+/gu, " ").toLocaleLowerCase("en-US");
+      const wanted = normalizeSearchTerm(term, "en");
       match = (reverseRows as Record<string, unknown>[]).find(candidate => {
         if (candidate.status !== "published" || typeof candidate.content !== "object" ||
             !candidate.content || Array.isArray(candidate.content)) return false;
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
         if (content.type !== type || content.sourceLanguage !== "de" ||
             content.targetLanguage !== "en" || typeof content.translation !== "string") return false;
         return content.translation.split(";").some(sense =>
-          sense.trim().normalize("NFKC").toLocaleLowerCase("en-US") === wanted);
+          normalizeSearchTerm(sense, "en") === wanted);
       });
     }
     // German noun lookup: accept an optional article, the exact singular,
