@@ -46,10 +46,14 @@ export default function SessionStatus() {
     const onVisible = () => {
       if (document.visibilityState === "visible") void checkSession();
     };
+    // A restored connection can recover an uncertain session without a reload.
+    const onOnline = () => { void checkSession(); };
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onOnline);
     return () => {
       unsubscribe();
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onOnline);
     };
   }, [checkSession]);
 
