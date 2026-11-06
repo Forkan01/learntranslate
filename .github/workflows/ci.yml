@@ -52,6 +52,7 @@ jobs:
       - run: node --test tests/v1g7d2d7-auth-verification.test.mjs
       - run: node --test tests/v1h1-reverse-search-whitespace.test.mjs
       - run: node --test tests/v1h2-card-presentation.test.mjs
+      - run: node --test tests/v1h3-single-candidate-search.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
