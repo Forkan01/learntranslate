@@ -62,7 +62,7 @@ export async function GET(request: Request) {
       if (!reverseResponse.ok) throw new Error("Reverse lookup failed");
       const reverseRows: unknown = await reverseResponse.json();
       if (!Array.isArray(reverseRows)) throw new Error("Invalid reverse response");
-      const wanted = term.normalize("NFKC").trim().replace(/\\s+/gu, " ").toLocaleLowerCase("en-US");
+      const wanted = term.normalize("NFKC").trim().replace(/\s+/gu, " ").toLocaleLowerCase("en-US");
       match = (reverseRows as Record<string, unknown>[]).find(candidate => {
         if (candidate.status !== "published" || typeof candidate.content !== "object" ||
             !candidate.content || Array.isArray(candidate.content)) return false;
