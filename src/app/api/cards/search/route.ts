@@ -107,10 +107,16 @@ export async function GET(request: Request) {
         const article = noun?.article;
         const articleMatch = article === "der" || article === "die" || article === "das"
           ? wanted === article + " " + singularBare : false;
+        // A supplied article must match the curated noun article; do not reuse
+        // a card for an incorrect article (e.g. "der Katze" for "die Katze").
+        const suppliedArticle = /^(der|die|das)\s+/u.exec(wanted)?.[1];
+        const bareSingularMatch = !suppliedArticle && wanted === singularBare;
         const plural = noun?.partOfSpeech === "noun" && typeof noun.plural === "string"
           ? normalizeSearchTerm(noun.plural, "de") : "";
-        return wanted === singular || withoutArticle === singularBare ||
-          articleMatch || (plural !== "" && (wanted === plural || withoutArticle === plural));
+        const pluralMatch = plural !== "" && (
+          wanted === plural || (!suppliedArticle && withoutArticle === plural)
+        );
+        return wanted === singular || bareSingularMatch || articleMatch || pluralMatch;
       });
     }
     return NextResponse.json({ found: Boolean(match), card: match ?? null }, {
