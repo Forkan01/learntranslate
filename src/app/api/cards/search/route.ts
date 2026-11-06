@@ -1,6 +1,31 @@
 import { NextResponse } from "next/server";
 import { makeCardSearchKey, normalizeSearchTerm, type CardLanguage, type CardType } from "@/lib/cards/schema";
 
+// Scan published cards in bounded pages rather than silently ignoring cards after row 500.
+// A hard cap keeps public search requests from scanning an unbounded database.
+const PAGE_SIZE = 500;
+const MAX_PAGES = 10;
+async function findPublishedFallback(
+  url: URL, key: string, predicate: (row: Record<string, unknown>) => boolean
+): Promise<Record<string, unknown> | undefined> {
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const pageUrl = new URL(url);
+    pageUrl.searchParams.set("offset", String(page * PAGE_SIZE));
+    const response = await fetch(pageUrl, {
+      headers: { apikey: key, Authorization: "Bearer " + key },
+      cache: "no-store", signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) throw new Error("Fallback lookup failed");
+    const rows: unknown = await response.json();
+    if (!Array.isArray(rows)) throw new Error("Invalid fallback response");
+    const match = (rows as Record<string, unknown>[]).find(predicate);
+    if (match) return match;
+    if (rows.length < PAGE_SIZE) return undefined;
+  }
+  // Never report an unverified miss when the dataset exceeds our scan budget.
+  throw new Error("Fallback scan limit exceeded");
+}
+
 export async function GET(request: Request) {
   const p = new URL(request.url).searchParams;
   const term = p.get("term") ?? "";
@@ -44,7 +69,7 @@ export async function GET(request: Request) {
     }
     // Reverse English lookup for the initial German→English published collection.
     // Only exact translation senses are accepted; no fuzzy or substring matches.
-    // This bounded fallback is suitable for the small curated V1 dataset.
+    // Bounded pagination supports growth beyond the initial curated V1 dataset.
     let match: Record<string, unknown> | undefined = row;
     if (!match && source === "en" && target === "de") {
       const reverseUrl = new URL("/rest/v1/cards", url.origin);
@@ -55,15 +80,8 @@ export async function GET(request: Request) {
       reverseUrl.searchParams.set("status", "eq.published");
       reverseUrl.searchParams.set("order", "term.asc");
       reverseUrl.searchParams.set("limit", "500");
-      const reverseResponse = await fetch(reverseUrl, {
-        headers: { apikey: key, Authorization: "Bearer " + key },
-        cache: "no-store", signal: AbortSignal.timeout(8000),
-      });
-      if (!reverseResponse.ok) throw new Error("Reverse lookup failed");
-      const reverseRows: unknown = await reverseResponse.json();
-      if (!Array.isArray(reverseRows)) throw new Error("Invalid reverse response");
       const wanted = normalizeSearchTerm(term, "en");
-      match = (reverseRows as Record<string, unknown>[]).find(candidate => {
+      match = await findPublishedFallback(reverseUrl, key, candidate => {
         if (candidate.status !== "published" || typeof candidate.content !== "object" ||
             !candidate.content || Array.isArray(candidate.content)) return false;
         const content = candidate.content as Record<string, unknown>;
@@ -86,14 +104,7 @@ export async function GET(request: Request) {
       germanUrl.searchParams.set("status", "eq.published");
       germanUrl.searchParams.set("order", "term.asc");
       germanUrl.searchParams.set("limit", "500");
-      const germanResponse = await fetch(germanUrl, {
-        headers: { apikey: key, Authorization: "Bearer " + key },
-        cache: "no-store", signal: AbortSignal.timeout(8000),
-      });
-      if (!germanResponse.ok) throw new Error("German forms lookup failed");
-      const germanRows: unknown = await germanResponse.json();
-      if (!Array.isArray(germanRows)) throw new Error("Invalid German forms response");
-      match = (germanRows as Record<string, unknown>[]).find(candidate => {
+      match = await findPublishedFallback(germanUrl, key, candidate => {
         if (candidate.status !== "published" || !candidate.content ||
             typeof candidate.content !== "object" || Array.isArray(candidate.content)) return false;
         const content = candidate.content as Record<string, unknown>;
