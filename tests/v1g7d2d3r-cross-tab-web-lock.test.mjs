@@ -42,11 +42,11 @@ test("lock failures propagate, subsequent operations can recover", async () => {
   const restoreNavigator = mockNavigator({ locks: { request: async (_name, _opts, cb) => {
     if (fail) { fail = false; throw new Error("lock denied"); }
     return cb();
-  } } };
+  } } });
   try {
     await assert.rejects(serializeSessionRequest(async () => "should not execute"), /lock denied/);
     assert.equal(await serializeSessionRequest(async () => "ok"), "ok");
-  } finally { globalThis.navigator = previous; }
+  } finally { restoreNavigator(); }
 });
 test("callback POST uses same queue as GET and DELETE", () => {
   const callback = readFileSync(new URL("../src/app/auth/callback/page.tsx", import.meta.url), "utf8");
