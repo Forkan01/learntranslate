@@ -42,6 +42,7 @@ jobs:
       - run: node --test tests/v1g7d2d3l-concurrency-regression.test.mjs
       - run: node --test tests/v1g7d2d3m-response-race-audit.test.mjs
       - run: node --test tests/v1g7d2d3n-browser-session-queue.test.mjs
+      - run: node --test tests/v1g7d2d3o-cross-tab-notices.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
