@@ -9,15 +9,17 @@ export default function SessionStatus() {
   const [status, setStatus] = useState<SessionState>("loading");
   const [checking, setChecking] = useState(false);
   const requestEpoch = useRef(0);
+  const signingOut = useRef(false);
   const checkSession = useCallback(async (signal?: AbortSignal) => {
     const epoch = ++requestEpoch.current;
+    if (signingOut.current) return;
     try {
       const response = await serializeSessionRequest(() => fetch("/api/auth/session", { cache: "no-store", signal }));
       const data: unknown = await response.json();
-      if (signal?.aborted || epoch !== requestEpoch.current) return;
+      if (signal?.aborted || epoch !== requestEpoch.current || signingOut.current) return;
       setStatus(interpretSessionResponse(response.status, data));
     } catch {
-      if (!signal?.aborted && epoch === requestEpoch.current) setStatus("retryable");
+      if (!signal?.aborted && epoch === requestEpoch.current && !signingOut.current) setStatus("retryable");
     }
   }, []);
   useEffect(() => {
@@ -64,14 +66,21 @@ export default function SessionStatus() {
     <span>✓ Signed in for future AI access</span>
     <button type="button" className="rounded-lg border border-[#668d84] px-3 py-2 font-semibold"
       onClick={async () => {
+        if (signingOut.current) return;
+        signingOut.current = true;
+        requestEpoch.current++;
         try {
-          requestEpoch.current++;
           const response = await serializeSessionRequest(() => fetch("/api/auth/session", { method: "DELETE" }));
           if (response.ok) {
             setStatus("signed-out");
             announceSignOut();
           }
-        } catch { /* Keep status until server confirms sign-out. */ }
+        } catch { /* Do not claim sign-out without server confirmation. */ }
+        finally {
+          signingOut.current = false;
+          // Reconcile any failed or uncertain sign-out against the server.
+          void checkSession();
+        }
       }}>Sign out</button>
   </div>;
 }
