@@ -4,6 +4,8 @@ import { allowSameOriginWrite } from "@/lib/cards/same-origin-write";
 import { singleFlightRefresh } from "@/lib/cards/refresh-singleflight";
 import { readBoundedJson } from "@/lib/cards/bounded-json";
 import { bindSessionTokenPair } from "@/lib/cards/bind-session-token-pair";
+import { coordinateSecureRedisRefresh } from "@/lib/cards/secure-redis-refresh-adapter";
+import { decideDistributedRefresh } from "@/lib/cards/distributed-refresh-decision";
 
 const ACCESS = "lt_auth_access";
 const REFRESH = "lt_auth_refresh";
@@ -69,6 +71,37 @@ export async function GET(request: NextRequest) {
   }
   // Configuration failures are transient: retain refresh credentials for retry.
   if (!config) return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
+  // Experimental distributed refresh is disabled unless explicitly enabled.
+  // Do not activate until identity binding and real multi-instance tests are complete.
+  if (process.env.ENABLE_DISTRIBUTED_SESSION_REFRESH === "true") {
+    const outcome = await coordinateSecureRedisRefresh({
+      refreshToken: refresh,
+      verifyPair: async (pair) => Boolean(await verifyGenerationUser(pair.access)),
+      refreshProvider: async () => {
+        const provider = await fetch(config.url + "/auth/v1/token?grant_type=refresh_token", {
+          method: "POST",
+          headers: { apikey: config.key, "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refresh }),
+          cache: "no-store",
+          signal: AbortSignal.timeout(5000),
+        });
+        if (!provider.ok) throw new Error("Refresh unavailable");
+        const data: unknown = await provider.json();
+        if (!data || typeof data !== "object" || Array.isArray(data)) throw new Error("Invalid provider response");
+        const tokens = data as Record<string, unknown>;
+        if (typeof tokens.access_token !== "string" || tokens.access_token.length > 8192 ||
+            !validRefresh(tokens.refresh_token) || !validExpires(tokens.expires_in))
+          throw new Error("Invalid provider tokens");
+        return { access: tokens.access_token, refresh: tokens.refresh_token, expires: tokens.expires_in };
+      },
+    });
+    const decision = decideDistributedRefresh(outcome);
+    if (decision.kind !== "set")
+      return NextResponse.json({ signedIn: false, retryable: true }, { status: 503, headers: noStore });
+    const result = NextResponse.json({ signedIn: true }, { headers: noStore });
+    setCookies(result, decision.access, decision.refresh, decision.expires);
+    return result;
+  }
   try {
     const tokens = await singleFlightRefresh(refresh, async () => {
       const response = await fetch(config.url + "/auth/v1/token?grant_type=refresh_token", {
