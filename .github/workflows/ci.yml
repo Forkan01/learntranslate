@@ -85,6 +85,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare disposable schema
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h14-fixture.sql
+      - name: Validate release preflight against fixture
+        run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h17-production-preflight.sql
       - name: Install normalization dependency
         run: |
           sed -n '1,/-- V1-H.7 staged database-side fallback lookup/ p' docs/sql/v1h7-lookup-published-card-fallback.sql | sed '$d' | psql -v ON_ERROR_STOP=1
@@ -95,4 +97,6 @@ jobs:
       - name: Install indexed RPC in disposable database
         run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h16-published-indexed-rpc.sql
       - name: Test indexed RPC security and search behavior
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h17-release-assertions.sql
+      - name: Test indexed RPC mutation lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
