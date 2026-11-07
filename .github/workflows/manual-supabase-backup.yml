@@ -36,14 +36,16 @@ jobs:
           set -euo pipefail
           umask 077
           mkdir -p backup
+          /usr/lib/postgresql/17/bin/pg_dump --version
+          /usr/lib/postgresql/17/bin/pg_restore --version
           # The URL is never passed as a command-line argument or written to the artifact.
           export PGCONNECT_TIMEOUT=15
           export PGSSLMODE=require
           export PGDATABASE_URL_UNUSED=""
-          pg_dump --dbname="$DB_URL" --format=custom --no-owner --no-acl \
+          /usr/lib/postgresql/17/bin/pg_dump --dbname="$DB_URL" --format=custom --no-owner --no-acl \
             --schema=public --schema=private --file=backup/database.dump
           test -s backup/database.dump
-          pg_restore --list backup/database.dump > backup/contents.txt
+          /usr/lib/postgresql/17/bin/pg_restore --list backup/database.dump > backup/contents.txt
           grep -Eq 'TABLE DATA.*cards|TABLE DATA.*public cards' backup/contents.txt
           sha256sum backup/database.dump > backup/sha256.txt
           openssl enc -aes-256-cbc -pbkdf2 -salt -iter 200000 \
