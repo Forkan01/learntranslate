@@ -1,4 +1,4 @@
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 -- Verify a non-owner API role can execute RPC without private schema privileges.
 set role anon;
 select count(*) as indexed_invoice from public.lookup_published_card_indexed('invoice','en','de','word');
