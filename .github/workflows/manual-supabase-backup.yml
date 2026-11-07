@@ -1,0 +1,68 @@
+name: Manual encrypted Supabase database backup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Ensure backup secrets exist
+        env:
+          DB_URL: ${{ secrets.SUPABASE_BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.SUPABASE_BACKUP_PASSPHRASE }}
+        run: |
+          test -n "$DB_URL" || { echo "Missing SUPABASE_BACKUP_DATABASE_URL"; exit 1; }
+          test -n "$BACKUP_PASSPHRASE" || { echo "Missing SUPABASE_BACKUP_PASSPHRASE"; exit 1; }
+          test "${#BACKUP_PASSPHRASE}" -ge 20 || { echo "Backup passphrase must be at least 20 characters"; exit 1; }
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-17
+      - name: Dump and validate backup without printing credentials
+        env:
+          DB_URL: ${{ secrets.SUPABASE_BACKUP_DATABASE_URL }}
+          BACKUP_PASSPHRASE: ${{ secrets.SUPABASE_BACKUP_PASSPHRASE }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p backup
+          # The URL is never passed as a command-line argument or written to the artifact.
+          export PGCONNECT_TIMEOUT=15
+          export PGSSLMODE=require
+          export PGDATABASE_URL_UNUSED=""
+          pg_dump --dbname="$DB_URL" --format=custom --no-owner --no-acl \
+            --schema=public --schema=private --file=backup/database.dump
+          test -s backup/database.dump
+          pg_restore --list backup/database.dump > backup/contents.txt
+          grep -Eq 'TABLE DATA.*cards|TABLE DATA.*public cards' backup/contents.txt
+          sha256sum backup/database.dump > backup/sha256.txt
+          openssl enc -aes-256-cbc -pbkdf2 -salt -iter 200000 \
+            -in backup/database.dump -out backup/database.dump.enc \
+            -pass env:BACKUP_PASSPHRASE
+          # Check the encryption round trip before discarding the plaintext.
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 \
+            -in backup/database.dump.enc -out backup/roundtrip.dump \
+            -pass env:BACKUP_PASSPHRASE
+          cmp backup/database.dump backup/roundtrip.dump
+          rm -f backup/database.dump backup/roundtrip.dump
+          echo "Encrypted backup created and integrity checked; restore not yet tested."
+      - name: Upload encrypted backup (short retention)
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-encrypted-backup
+          path: |
+            backup/database.dump.enc
+            backup/sha256.txt
+            backup/contents.txt
+          retention-days: 1
+          if-no-files-found: error
