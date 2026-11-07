@@ -92,3 +92,7 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h12-indexed-search-migration-candidate.sql
       - name: Verify database behavior
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h14-assertions.sql
+      - name: Install indexed RPC in disposable database
+        run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h16-published-indexed-rpc.sql
+      - name: Test indexed RPC security and search behavior
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
