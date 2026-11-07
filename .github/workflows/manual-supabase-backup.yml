@@ -10,6 +10,19 @@ jobs:
   backup:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: restore_test_only
+          POSTGRES_DB: restore_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d restore_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
     steps:
       - name: Ensure backup secrets exist
         env:
@@ -56,8 +69,30 @@ jobs:
             -in backup/database.dump.enc -out backup/roundtrip.dump \
             -pass env:BACKUP_PASSPHRASE
           cmp backup/database.dump backup/roundtrip.dump
-          rm -f backup/database.dump backup/roundtrip.dump
-          echo "Encrypted backup created and integrity checked; restore not yet tested."
+          rm -f backup/roundtrip.dump
+          echo "Encrypted backup created and integrity checked."
+      - name: Restore archive to disposable PostgreSQL 17
+        env:
+          PGPASSWORD: restore_test_only
+          PGHOST: localhost
+          PGPORT: "5432"
+          PGUSER: postgres
+          PGDATABASE: restore_test
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Never point this step at production; connection variables are local-only.
+          /usr/lib/postgresql/17/bin/pg_restore \
+            --dbname=restore_test --no-owner --no-acl --exit-on-error \
+            backup/database.dump
+          /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -Atqc \
+            "select count(*) from public.cards" > backup/restored-card-count.txt
+          test "$(cat backup/restored-card-count.txt)" -gt 0
+          echo "Disposable restore completed. Restored cards: $(cat backup/restored-card-count.txt)"
+      - name: Remove plaintext dump
+        if: always()
+        shell: bash
+        run: rm -f backup/database.dump backup/roundtrip.dump
       - name: Upload encrypted backup (short retention)
         uses: actions/upload-artifact@v4
         with:
@@ -66,5 +101,6 @@ jobs:
             backup/database.dump.enc
             backup/sha256.txt
             backup/contents.txt
+            backup/restored-card-count.txt
           retention-days: 1
           if-no-files-found: error
