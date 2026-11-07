@@ -108,6 +108,10 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h26-rls-reverse-terms.sql
       - name: Verify production readiness and rollback rehearsal
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h27-readiness-gates.sql
+      - name: Rehearse reversible schema downgrade
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h28-schema-rollback.sql
+      - name: Benchmark exact lookup with 10k synthetic cards
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h28-large-dataset-benchmark.sql
       - name: Test indexed RPC mutation lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
 
