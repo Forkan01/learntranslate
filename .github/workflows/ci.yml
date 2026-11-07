@@ -100,6 +100,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h16-published-indexed-rpc.sql
       - name: Test indexed RPC security and search behavior
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h17-release-assertions.sql
+      - name: Test SECURITY INVOKER replacement with anon role and RLS
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h24-invoker-security.sql
       - name: Test indexed RPC mutation lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
 
