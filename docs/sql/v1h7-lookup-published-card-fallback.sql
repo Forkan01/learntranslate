@@ -38,9 +38,11 @@ as $$
       ))
       or
       (p_source = 'de' and p_target = 'en' and p_type = 'word' and (
-        public.lookup_normalized_term(c.content->>'term') = public.lookup_normalized_term(p_term)
+        (c.content->'grammar'->>'partOfSpeech' = 'noun' and
+          public.lookup_normalized_term(c.content->>'term') = public.lookup_normalized_term(p_term))
         or (
-          p_term !~* '^(der|die|das)[[:space:]]+'
+          c.content->'grammar'->>'partOfSpeech' = 'noun'
+          and p_term !~* '^(der|die|das)[[:space:]]+'
           and public.lookup_normalized_term(regexp_replace(c.content->>'term', '^(der|die|das)[[:space:]]+', '', 'i'))
             = public.lookup_normalized_term(p_term)
         )
