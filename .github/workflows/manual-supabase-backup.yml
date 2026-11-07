@@ -84,7 +84,7 @@ jobs:
           # Fresh PostgreSQL creates public by default; the archive creates it too.
           # Drop only in this disposable local service, never in production.
           /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE;"
-          /usr/lib/postgresql/17/bin/pg_restore \
+          # Supabase policy definitions reference cluster roles not included in pg_dump.\n          /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -c "CREATE ROLE anon NOLOGIN;"\n          /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -c "CREATE ROLE authenticated NOLOGIN;"\n          /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -c "CREATE ROLE service_role NOLOGIN;"\n          /usr/lib/postgresql/17/bin/pg_restore \
             --dbname=restore_test --no-owner --no-acl --exit-on-error \
             backup/database.dump
           /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -Atqc \
