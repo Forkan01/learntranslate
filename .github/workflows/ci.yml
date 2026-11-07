@@ -104,6 +104,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h24-invoker-security.sql
       - name: Test indexed RPC mutation lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
+      - name: Test published-card partial search indexes
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h25-search-indexes.sql
 
   indexed-release-bundle:
     runs-on: ubuntu-latest
