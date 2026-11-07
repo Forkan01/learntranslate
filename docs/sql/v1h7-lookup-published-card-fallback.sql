@@ -47,13 +47,16 @@ as $$
             = public.lookup_normalized_term(p_term)
         )
         or (
-          c.content->'grammar'->>'article' in ('der','die','das')
+          c.content->'grammar'->>'partOfSpeech' = 'noun'
+          and c.content->'grammar'->>'article' in ('der','die','das')
           and public.lookup_normalized_term(p_term) = public.lookup_normalized_term(c.content->'grammar'->>'article' || ' ' ||
             regexp_replace(c.content->>'term', '^(der|die|das)[[:space:]]+', '', 'i'))
         )
         or (
           c.content->'grammar'->>'partOfSpeech' = 'noun'
           and public.lookup_normalized_term(c.content->'grammar'->>'plural') = public.lookup_normalized_term(p_term)
+          and public.lookup_normalized_term(c.content->'grammar'->>'plural') <> ''
+          and public.lookup_normalized_term(p_term) !~ '^(der|die|das) '
         )
       ))
     )
