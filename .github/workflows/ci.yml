@@ -106,6 +106,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h25-search-indexes.sql
       - name: Test RLS-backed exact search index and publication lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h26-rls-reverse-terms.sql
+      - name: Verify production readiness and rollback rehearsal
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h27-readiness-gates.sql
       - name: Test indexed RPC mutation lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
 
