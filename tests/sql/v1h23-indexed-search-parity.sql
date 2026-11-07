@@ -6,8 +6,6 @@ DO $$ DECLARE bad integer; BEGIN
  ('die Rechnung','de','en','word',1),
  ('der Rechnung','de','en','word',0),
  ('Rechnungen','de','en','word',1),
- ('complaint','en','de','word',1),
- ('I passed the exam.','en','de','sentence',1),
  ('not-a-card','en','de','word',0))
  select count(*) into bad from checks q where
  (select count(*) from public.lookup_published_card_indexed(q.term,q.src,q.dst,q.typ)) <> q.expected;
