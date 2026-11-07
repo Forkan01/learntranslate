@@ -26,6 +26,33 @@ async function findPublishedFallback(
   throw new Error("Fallback scan limit exceeded");
 }
 
+// Opt-in only after the database RPC is deployed and verified.
+// A missing, failing, or incompatible RPC falls back to the established scan.
+async function tryIndexedFallback(
+  origin: string, key: string, term: string, source: string, target: string,
+  type: string, predicate: (row: Record<string, unknown>) => boolean
+): Promise<Record<string, unknown> | undefined> {
+  if (process.env.CARD_INDEXED_SEARCH_ENABLED !== "true") return undefined;
+  try {
+    const endpoint = new URL("/rest/v1/rpc/lookup_published_card_indexed", origin);
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { apikey: key, Authorization: "Bearer " + key,
+        "Content-Type": "application/json" },
+      body: JSON.stringify({ p_term: term, p_source: source, p_target: target, p_type: type }),
+      cache: "no-store", signal: AbortSignal.timeout(4000),
+    });
+    if (!response.ok) return undefined;
+    const result: unknown = await response.json();
+    if (!Array.isArray(result)) return undefined;
+    // The database must return full card rows; never trust a match without
+    // rechecking published status and the existing JS matching rules.
+    return (result as Record<string, unknown>[]).find(predicate);
+  } catch {
+    return undefined;
+  }
+}
+
 export async function GET(request: Request) {
   const p = new URL(request.url).searchParams;
   const term = p.get("term") ?? "";
@@ -81,7 +108,7 @@ export async function GET(request: Request) {
       reverseUrl.searchParams.set("order", "term.asc");
       reverseUrl.searchParams.set("limit", "500");
       const wanted = normalizeSearchTerm(term, "en");
-      match = await findPublishedFallback(reverseUrl, key, candidate => {
+      const reversePredicate = (candidate: Record<string, unknown>): boolean => {
         if (candidate.status !== "published" || typeof candidate.content !== "object" ||
             !candidate.content || Array.isArray(candidate.content)) return false;
         const content = candidate.content as Record<string, unknown>;
@@ -89,7 +116,9 @@ export async function GET(request: Request) {
             content.targetLanguage !== "en" || typeof content.translation !== "string") return false;
         return content.translation.split(";").some(sense =>
           normalizeSearchTerm(sense, "en") === wanted);
-      });
+      };
+      match = await tryIndexedFallback(url.origin, key, term, source, target, type, reversePredicate);
+      if (!match) match = await findPublishedFallback(reverseUrl, key, candidate => reversePredicate(candidate));
     }
     // German noun lookup: accept an optional article, the exact singular,
     // or an explicitly curated plural. Never guess arbitrary inflections.
@@ -104,7 +133,7 @@ export async function GET(request: Request) {
       germanUrl.searchParams.set("status", "eq.published");
       germanUrl.searchParams.set("order", "term.asc");
       germanUrl.searchParams.set("limit", "500");
-      match = await findPublishedFallback(germanUrl, key, candidate => {
+      const germanPredicate = (candidate: Record<string, unknown>): boolean => {
         if (candidate.status !== "published" || !candidate.content ||
             typeof candidate.content !== "object" || Array.isArray(candidate.content)) return false;
         const content = candidate.content as Record<string, unknown>;
@@ -128,7 +157,9 @@ export async function GET(request: Request) {
           wanted === plural || (!suppliedArticle && withoutArticle === plural)
         );
         return wanted === singular || bareSingularMatch || articleMatch || pluralMatch;
-      });
+      };
+      match = await tryIndexedFallback(url.origin, key, term, source, target, type, germanPredicate);
+      if (!match) match = await findPublishedFallback(germanUrl, key, candidate => germanPredicate(candidate));
     }
     return NextResponse.json({ found: Boolean(match), card: match ?? null }, {
       headers: { "Cache-Control": "no-store" },
