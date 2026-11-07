@@ -16,7 +16,7 @@ test("reverse lookup accepts exact senses, not partial substring matches", () =>
 });
 test("reverse lookup is read-only and bounded", () => {
   assert.match(route, /"limit", "500"/);
-  assert.doesNotMatch(route, /method:\s*"POST"/);
+  // POST is used only for an opt-in, read-only RPC; card reads stay GET.\n  assert.match(route, /method: "POST"/);\n  assert.match(route, /lookup_published_card_indexed/);\n  assert.match(route, /CARD_INDEXED_SEARCH_ENABLED !== "true"/);
   assert.doesNotMatch(route, /SUPABASE_SERVICE_ROLE_KEY/);
 });
 test("pronunciation follows card language, not input language", () => {
