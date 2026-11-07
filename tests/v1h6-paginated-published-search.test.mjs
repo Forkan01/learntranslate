@@ -7,8 +7,8 @@ test("both published fallbacks paginate instead of stopping at first 500 cards",
   assert.match(route, /const MAX_PAGES = 10/);
   assert.match(route, /"offset", String\(page \* PAGE_SIZE\)/);
   assert.match(route, /if \(rows\.length < PAGE_SIZE\) return undefined/);
-  assert.match(route, /match = await findPublishedFallback\(reverseUrl, key, candidate =>/);
-  assert.match(route, /match = await findPublishedFallback\(germanUrl, key, candidate =>/);
+  assert.match(route, /match = await findPublishedFallback\(reverseUrl, key, candidate => reversePredicate\(candidate\)/);
+  assert.match(route, /match = await findPublishedFallback\(germanUrl, key, candidate => germanPredicate\(candidate\)/);
 });
 test("exhausted scan budget fails closed, rather than reporting a false miss", () => {
   assert.match(route, /throw new Error\("Fallback scan limit exceeded"\)/);

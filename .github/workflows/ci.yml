@@ -57,6 +57,7 @@ jobs:
       - run: node --test tests/v1h5-reverse-sense-normalization.test.mjs
       - run: node --test tests/v1h6-paginated-published-search.test.mjs
       - run: node --test tests/v1h13-migration-preflight.test.mjs
+      - run: node --test tests/v1h15-flagged-indexed-rpc.test.mjs
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
