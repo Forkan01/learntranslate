@@ -60,3 +60,34 @@ jobs:
       - run: npm run lint
       - run: npx tsc --noEmit
       - run: npm run build
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: learntranslate_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d learntranslate_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: learntranslate_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable schema
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h14-fixture.sql
+      - name: Install normalization dependency
+        run: |
+          sed -n '1,/-- V1-H.7 staged database-side fallback lookup/ p' docs/sql/v1h7-lookup-published-card-fallback.sql | sed '$d' | psql -v ON_ERROR_STOP=1
+      - name: Execute staged migration SQL
+        run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h12-indexed-search-migration-candidate.sql
+      - name: Verify database behavior
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h14-assertions.sql
