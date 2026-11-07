@@ -102,3 +102,34 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h17-release-assertions.sql
       - name: Test indexed RPC mutation lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h16-rpc-assertions.sql
+
+  indexed-release-bundle:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: learntranslate_release_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d learntranslate_release_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: learntranslate_release_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare disposable production-shaped fixture
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/v1h14-fixture.sql
+          psql -v ON_ERROR_STOP=1 -c 'alter table public.cards enable row level security'
+      - name: Install exact release bundle
+        run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h21-indexed-install-transaction.sql
+      - name: Validate bundle
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h21-bundle-assertions.sql
