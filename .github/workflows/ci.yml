@@ -133,3 +133,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h21-indexed-install-transaction.sql
       - name: Validate bundle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h21-bundle-assertions.sql
+      - name: Validate indexed-search regression probes
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h23-indexed-search-parity.sql
