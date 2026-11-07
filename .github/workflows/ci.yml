@@ -85,6 +85,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Prepare disposable schema
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h14-fixture.sql
+      - name: Mirror production cards RLS in disposable fixture
+        run: psql -v ON_ERROR_STOP=1 -c 'alter table public.cards enable row level security'
       - name: Validate release preflight against fixture
         run: psql -v ON_ERROR_STOP=1 -f docs/sql/v1h17-production-preflight.sql
       - name: Install normalization dependency
