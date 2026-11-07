@@ -104,6 +104,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h24-invoker-security.sql
       - name: Test published-card partial search indexes
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h25-search-indexes.sql
+      - name: Verify private index boundary before H26 legacy regression
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h32-private-index-boundary.sql
       - name: Test RLS-backed exact search index and publication lifecycle
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h26-rls-reverse-terms.sql
       - name: Verify production readiness and rollback rehearsal
