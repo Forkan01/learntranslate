@@ -110,6 +110,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h27-readiness-gates.sql
       - name: Rehearse reversible schema downgrade
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h28-schema-rollback.sql
+      - name: Rehearse committed H26 downgrade and reinstall
+        run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h30-committed-downgrade.sql
       - name: Benchmark exact lookup with 10k synthetic cards
         run: psql -v ON_ERROR_STOP=1 -f tests/sql/v1h28-large-dataset-benchmark.sql
       - name: Test indexed RPC mutation lifecycle
