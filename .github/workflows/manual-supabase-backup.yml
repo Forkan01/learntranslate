@@ -81,7 +81,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Never point this step at production; connection variables are local-only.
+          # Fresh PostgreSQL creates public by default; the archive creates it too.
+          # Drop only in this disposable local service, never in production.
+          /usr/lib/postgresql/17/bin/psql -X -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE;"
           /usr/lib/postgresql/17/bin/pg_restore \
             --dbname=restore_test --no-owner --no-acl --exit-on-error \
             backup/database.dump
