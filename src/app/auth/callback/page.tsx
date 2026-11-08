@@ -66,10 +66,31 @@ export default function AuthCallbackPage() {
               : "Sign-in could not finish: the session service returned an error. Please try again later.");
           return;
         }
-        if (!cancelled) {
-          captured.current = null;
-          setStatus("✓ Signed in successfully! AI generation is not enabled yet.");
+        // A successful cookie-writing POST is not evidence that the browser
+        // actually retained the HttpOnly session. Confirm from a fresh request
+        // before claiming sign-in. This sends NO sign-in email.
+        const check = await serializeSessionRequest(() => {
+          if (cancelled || callbackIsStale(initialSignOutMarker))
+            throw new Error("Sign-in cancelled after sign-out");
+          return fetch("/api/auth/session", {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+          });
+        });
+        if (cancelled) return;
+        let confirmed = false;
+        if (check.ok) {
+          const proof: unknown = await check.json();
+          confirmed = proof !== null && typeof proof === "object" &&
+            !Array.isArray(proof) && "signedIn" in proof && proof.signedIn === true;
         }
+        captured.current = null;
+        if (!confirmed) {
+          setStatus("Your email was verified, but the browser session could not be confirmed. Check /api/auth/session in this browser before requesting another email.");
+          return;
+        }
+        setStatus("✓ Signed in successfully! Your browser session is confirmed.");
       } catch {
         if (!cancelled) {
           captured.current = null;
