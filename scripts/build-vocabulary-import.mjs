@@ -8,6 +8,11 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const path = process.argv[2];
+const checkOnly = process.argv[3] === "--check";
+if (process.argv.length > 4 || (process.argv[3] && !checkOnly)) {
+  console.error("Usage: node scripts/build-vocabulary-import.mjs <cards.json> [--check]");
+  process.exit(2);
+}
 if (!path) { console.error("Usage: node scripts/build-vocabulary-import.mjs <cards.json>"); process.exit(2); }
 const raw = JSON.parse(readFileSync(resolve(path), "utf8"));
 if (!Array.isArray(raw) || raw.length === 0 || raw.length > 1000) throw Error("Expected 1–1000 cards");
@@ -18,7 +23,8 @@ const esc = s => "'" + s.replaceAll("'", "''") + "'";
 const norm = (s, lang) => s.normalize("NFKC").trim().replace(/\s+/gu, " ").toLocaleLowerCase(lang === "de" ? "de-DE" : "en-US");
 const fail = (i, m) => { throw Error("Card " + (i + 1) + ": " + m); };
 const seen = new Set();
-const statements = ["BEGIN;"];
+const categorySlugs = new Set();
+const statements = ["BEGIN;", "SET LOCAL standard_conforming_strings = on;"];
 for (const [i, entry] of raw.entries()) {
   if (!entry || typeof entry !== "object" || Array.isArray(entry)) fail(i, "not an object");
   const { content, categories } = entry;
@@ -30,21 +36,44 @@ for (const [i, entry] of raw.entries()) {
     if (!content.grammar || !allowedParts.includes(content.grammar.partOfSpeech)) fail(i, "invalid grammar");
     if (!Array.isArray(content.examples) || content.examples.length !== 5) fail(i, "word cards require exactly five examples");
     if (content.grammar.article && (content.grammar.partOfSpeech !== "noun" || !["der","die","das"].includes(content.grammar.article))) fail(i, "invalid noun article");
+    if (content.grammar.partOfSpeech === "noun" && content.sourceLanguage === "de" &&
+        (!["der","die","das"].includes(content.grammar.article) || typeof content.grammar.plural !== "string" || !content.grammar.plural.trim())) fail(i, "German nouns require article and plural");
   } else if (typeof content.naturalMeaning !== "string" || !content.naturalMeaning.trim()) fail(i, "missing naturalMeaning");
   if (content.examples) {
     if (!Array.isArray(content.examples) || content.examples.length > 10) fail(i, "invalid examples");
     for (const ex of content.examples) if (!ex || typeof ex.source !== "string" || !ex.source.trim() || typeof ex.translation !== "string" || !ex.translation.trim()) fail(i, "invalid example");
   }
-  if (!Array.isArray(categories) || categories.length === 0 || categories.some(s => typeof s !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s))) fail(i, "invalid category slugs");
+  if (!Array.isArray(categories) || categories.length === 0 || categories.some(s => typeof s !== "string" || s.length > 64 || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s))) fail(i, "invalid category slugs");
+  for (const slug of categories) categorySlugs.add(slug);
   const key = [content.type, content.sourceLanguage, content.targetLanguage, norm(content.term, content.sourceLanguage)].join(":");
   if (seen.has(key)) fail(i, "duplicate search key " + key);
   seen.add(key);
   const json = JSON.stringify(content);
-  // Insert as review only. Never publish automatically. Do not overwrite approved cards.
-  statements.push(`INSERT INTO public.cards (type,source_language,target_language,term,search_key,status,content) VALUES (${esc(content.type)},${esc(content.sourceLanguage)},${esc(content.targetLanguage)},${esc(content.term)},${esc(key)},'review',${esc(json)}::jsonb) ON CONFLICT (search_key) DO NOTHING;`);
-  for (const slug of new Set(categories)) {
-    statements.push(`INSERT INTO public.card_categories(card_id,category_id) SELECT c.id, cat.id FROM public.cards c JOIN public.categories cat ON cat.slug=${esc(slug)} WHERE c.search_key=${esc(key)} ON CONFLICT DO NOTHING;`);
-  }
+  // Associate categories only with cards inserted in THIS import. A duplicate
+  // published card must never acquire new category associations accidentally.
+  const slugs = [...new Set(categories)].map(esc).join(",");
+  statements.push(`WITH inserted AS (
+    INSERT INTO public.cards (type,source_language,target_language,term,search_key,status,content)
+    VALUES (${esc(content.type)},${esc(content.sourceLanguage)},${esc(content.targetLanguage)},${esc(content.term)},${esc(key)},'review',${esc(json)}::jsonb)
+    ON CONFLICT (search_key) DO NOTHING RETURNING id
+  )
+  INSERT INTO public.card_categories(card_id,category_id)
+  SELECT inserted.id, cat.id FROM inserted CROSS JOIN public.categories cat
+  WHERE cat.slug IN (${slugs}) ON CONFLICT DO NOTHING;`);
 }
+// Abort the entire transaction if a category name is unknown. Do not silently
+// create uncategorized cards. Slugs are strictly validated above.
+const preflight = [...categorySlugs].map(slug =>
+  `DO $lt_admin$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.categories WHERE slug = ${esc(slug)}) THEN
+      RAISE EXCEPTION 'Unknown LearnTranslate category: ${slug}';
+    END IF;
+  END $lt_admin$;`
+);
+statements.splice(2, 0, ...preflight);
 statements.push("COMMIT;");
-process.stdout.write("-- Review-first LearnTranslate import: " + raw.length + " cards; no automatic publishing.\n" + statements.join("\n") + "\n");
+if (checkOnly) {
+  process.stdout.write("Valid: " + raw.length + " review cards across " + categorySlugs.size + " categories. No SQL executed.\n");
+} else {
+  process.stdout.write("-- Review-first LearnTranslate import: " + raw.length + " cards; no automatic publishing.\n" + statements.join("\n") + "\n");
+}
