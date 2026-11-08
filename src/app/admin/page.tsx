@@ -227,7 +227,7 @@ export default function AdminAccessPage() {
                       Edit private draft →
                     </Link>
                   )}
-                  <p className="mt-4 text-xs text-[#748078]">Updated {selected.updatedAt.slice(0, 10)} · Preview</p>
+                  <p className="mt-4 text-xs text-[#748078]">Updated {selected.updatedAt.slice(0, 10)} · Read-only preview</p>
                 </section>
               )}
             </>
