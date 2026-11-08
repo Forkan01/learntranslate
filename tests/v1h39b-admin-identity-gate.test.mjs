@@ -93,9 +93,12 @@ test("admin endpoint is GET-only with no secrets and no cache", () => {
   assert.doesNotMatch(route, /SUPABASE_SERVICE_ROLE_KEY|Authorization:|search_key|content:/);
 });
 
-test("admin page is only an access-status shell, not a card editor", () => {
+test("admin UI requires verified access before showing protected card content", () => {
   assert.match(ui, /fetch\("\/api\/admin\/access"/);
-  assert.match(ui, /state === "authorized"/);
+  // H.39C.1 switches to a deny-by-default render: anything except
+  // an explicitly authorized session sees only the access-status shell.
+  assert.match(ui, /state !== "authorized"/);
+  assert.match(ui, /fetch\("\/api\/admin\/cards\?/);
   assert.doesNotMatch(ui, /SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_LEARNTRANSLATE_ADMIN_USER_ID/);
-  assert.doesNotMatch(ui, /fetch\("\/rest\/v1\/cards"|fetch\("\/api\/admin\/cards"/);
+  assert.doesNotMatch(ui, /fetch\("\/rest\/v1\/cards"/);
 });
