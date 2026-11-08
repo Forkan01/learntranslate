@@ -161,3 +161,12 @@ test("creation UI is separate from unchanged read-only dashboard", () => {
   assert.match(ui, /Save private draft/);
   assert.doesNotMatch(admin, /fetch\([^)]*,\s*\{\s*method:\s*"(POST|PUT|PATCH|DELETE)"/);
 });
+
+test("TypeScript contract retains narrow languages and draft-only status", () => {
+  const types = read("../src/lib/admin/create-draft.d.mts");
+  assert.match(types, /export type AdminDraftRow/);
+  assert.match(types, /type: "word" \| "sentence"/);
+  assert.match(types, /target_language: "de" \| "en"/);
+  assert.match(types, /status: "draft"/);
+  assert.match(types, /parseNewAdminDraft\(value: unknown\): AdminDraftRow \| null/);
+});
