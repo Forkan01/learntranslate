@@ -74,11 +74,12 @@ test("server gate gets only the signed-in user's HttpOnly cookie and verifies wi
   assert.match(serverGate, /process\.env\.ENABLE_LEARNTRANSLATE_ADMIN/);
   assert.match(serverGate, /process\.env\.LEARNTRANSLATE_ADMIN_USER_ID/);
   assert.doesNotMatch(serverGate, /request\.headers\.get\("x-admin|request\.nextUrl\.searchParams/);
-  // Inspect executable source, not security commentary that mentions unsafe
-  // examples to warn maintainers never to rely on them.
-  const executableGate = serverGate
-    .replace(/\\/\\*[\\s\\S]*?\\*\\//g, "")
-    .replace(/^\\s*\\/\\/.*$/gm, "");
+  // Check the imports and function body, excluding the explanatory block
+  // comment that names prohibited metadata as a warning.
+  const commentStart = serverGate.indexOf("/**");
+  const functionStart = serverGate.indexOf("export async function resolveAdminAccess");
+  assert.ok(commentStart > 0 && functionStart > commentStart);
+  const executableGate = serverGate.slice(0, commentStart) + serverGate.slice(functionStart);
   assert.doesNotMatch(executableGate, /SUPABASE_SERVICE_ROLE_KEY|user_metadata/);
 });
 
