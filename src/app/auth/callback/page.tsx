@@ -25,7 +25,7 @@ export default function AuthCallbackPage() {
       const error = hash.get("error_description") || hash.get("error");
       if (error || !token || !refresh || !Number.isFinite(expires)) {
         setStatus(error ? "The email link could not be verified. Please request a new link." :
-          "No sign-in token found. Please open a fresh email link.");
+          "This link did not provide sign-in credentials. Use the email code sign-in instead.");
         return;
       }
       const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -73,7 +73,8 @@ export default function AuthCallbackPage() {
     <div className="rounded-3xl border border-[#d8d0bb] bg-[#fff9eb] p-8">
       <h1 className="text-2xl font-black text-[#293b37]">✉ LearnTranslate email verification</h1>
       <p role="status" className="mt-4 text-[#4d625d]">{status}</p>
-      <Link href="/search" className="mt-6 inline-block rounded-xl bg-[#668d84] px-5 py-3 font-bold text-white">Back to Search</Link>
+      <Link href="/auth/sign-in" className="mt-6 inline-block rounded-xl bg-[#668d84] px-5 py-3 font-bold text-white">Sign in with email code →</Link>
+      <Link href="/search" className="ml-3 mt-6 inline-block rounded-xl border border-[#d8d0bb] px-5 py-3 font-bold">Back to Search</Link>
     </div>
   </main>;
 }
