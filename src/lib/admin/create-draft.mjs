@@ -80,7 +80,7 @@ export function parseNewAdminDraft(value) {
     content.naturalMeaning = naturalMeaning;
     content.grammarBreakdown = grammarBreakdown;
   }
-  const normal = term.normalize("NFKC").trim().replace(/\\s+/gu, " ")
+  const normal = term.normalize("NFKC").trim().replace(/\s+/gu, " ")
     .toLocaleLowerCase(value.sourceLanguage === "de" ? "de-DE" : "en-US");
   const searchKey = [value.type, value.sourceLanguage, targetLanguage, normal].join(":");
   return {
