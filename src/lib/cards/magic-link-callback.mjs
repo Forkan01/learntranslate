@@ -7,6 +7,13 @@
  *
  * Callers own the cache (a component useRef). Never persist credentials.
  */
+/**
+ * @typedef {{ kind: "missing" } | { kind: "error" } |
+ *   { kind: "credentials", accessToken: string, refreshToken: string, expires: number }} MagicLinkRedirect
+ * @param {string} fragment
+ * @param {MagicLinkRedirect | null} [previous]
+ * @returns {MagicLinkRedirect}
+ */
 export function captureMagicLinkRedirect(fragment, previous = null) {
   if (previous !== null) return previous;
   if (typeof fragment !== "string" || fragment.length > 20000)
