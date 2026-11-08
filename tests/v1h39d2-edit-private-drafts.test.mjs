@@ -170,3 +170,13 @@ test("dashboard links to editor only for drafts and editor is preview-only until
   assert.match(ui,/Save draft changes/);
   assert.doesNotMatch(ui,/SUPABASE_SERVICE_ROLE_KEY|NEXT_PUBLIC_ADMIN_ROLE/);
 });
+
+test("runtime route parameters are isolated inside Suspense for Next.js prerendering", () => {
+  assert.match(ui, /import \{ Suspense, useEffect, useRef, useState, type FormEvent \} from "react"/);
+  assert.match(ui, /function EditAdminDraftContent\(\)/);
+  assert.match(ui, /const params = useParams<\{ id: string \}>\(\)/);
+  assert.match(ui, /export default function EditAdminDraftPage\(\)/);
+  assert.match(ui, /<Suspense fallback=/);
+  assert.match(ui, /<EditAdminDraftContent \/>/);
+  assert.match(dashboard, /Read-only preview/);
+});
