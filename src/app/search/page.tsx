@@ -32,7 +32,7 @@ export default function CardSearchPage() {
       // The API already handles German noun articles and curated plurals.
       // Avoid retrying a stripped term and repeating expensive database lookups.
       for (const type of ["word", "sentence"]) {
-        const query = new URLSearchParams({ term: submittedTerm, source, target, type });
+        const query = new URLSearchParams({ term: term.trim(), source, target, type });
         const response = await fetch("/api/cards/search?" + query, { cache: "no-store" });
         if (!response.ok) throw new Error("Search unavailable");
         const payload: { found: boolean; card: { id: string; content: LearningCardContent } | null } = await response.json();
