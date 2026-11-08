@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -33,7 +33,7 @@ const validPart = (value: unknown): PartOfSpeech =>
     "pronoun", "preposition", "conjunction", "interjection", "article", "particle", "other"] as string[]).includes(value)
     ? value as PartOfSpeech : "other";
 
-export default function EditAdminDraftPage() {
+function EditAdminDraftContent() {
   const params = useParams<{ id: string }>();
   const id = params.id;
   const [draft, setDraft] = useState<Draft | null>(null);
@@ -231,5 +231,21 @@ export default function EditAdminDraftPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+/**
+ * Next.js Cache Components require a Suspense boundary around useParams().
+ * Keep the editor hook inside the child so the fallback can prerender safely.
+ */
+export default function EditAdminDraftPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-[#fffaf2] px-4 py-10 text-[#343d4a]">
+        <p role="status" className="mx-auto max-w-3xl text-sm font-semibold">Loading draft editor…</p>
+      </main>
+    }>
+      <EditAdminDraftContent />
+    </Suspense>
   );
 }
