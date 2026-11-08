@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // V1-H.36: regression checks for the opt-in indexed search API.
 // Run: node --test tests/indexed-search-route.test.cjs
 const { test } = require("node:test");
@@ -35,6 +36,7 @@ function loadHandler({ enabled, rpcMode = "normal" }) {
       return { ok: true, json: async () => found };
     }
     const searchKey = u.searchParams.get("search_key");
+    // A REST lookup by search_key is exact; fallback scans must include all published cards.
     const data = searchKey ? cards.filter(c => c.search_key === searchKey.slice(3)) : cards.filter(c => (!u.searchParams.get("type") || c.content.type === u.searchParams.get("type")));
     return { ok: true, json: async () => data };
   };
@@ -62,17 +64,17 @@ for (const enabled of [false, true]) {
     ]) {
       const response = await search(h, term, source);
       assert.equal(response.status, 200, term);
-      assert.equal(response.body.found, expected, term);
+      assert.equal(response.body.found, expected, term + " paths=" + h.calls.join(","));
     }
     assert.equal(h.calls.some(p => p.includes("/rpc/")), enabled);
   });
 }
 test("RPC failure falls back to published scan", async () => {
   const h = loadHandler({ enabled: true, rpcMode: "error" });
-  assert.equal((await search(h, "application", "en")).body.found, true);
+  assert.equal((await search(h, "application", "en")).body.found, true, "paths=" + h.calls.join(","));
   assert.ok(h.calls.some(p => p.includes("/rpc/")));
 });
 test("RPC unpublished result is rejected and fallback still works", async () => {
   const h = loadHandler({ enabled: true, rpcMode: "unpublished" });
-  assert.equal((await search(h, "formal request", "en")).body.found, true);
+  assert.equal((await search(h, "formal request", "en")).body.found, true, "paths=" + h.calls.join(","));
 });
