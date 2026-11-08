@@ -5,15 +5,17 @@ import Link from "next/link";
 import type { LearningCardContent } from "@/lib/cards/schema";
 import GenerationSignIn from "./GenerationSignIn";
 import { curatedSentenceGrammar } from "@/lib/cards/curated-sentence-grammar.mjs";
+import { getCardDisplay } from "@/lib/cards/card-display.mjs";
 import SessionStatus from "./SessionStatus";
 
 type CardRow = { id: string; content: LearningCardContent };
+type SearchResult = CardRow & { searchedSource: Direction; searchedTerm: string };
 type Direction = "de" | "en";
 
 export default function CardSearchPage() {
   const [term, setTerm] = useState("");
   const [source, setSource] = useState<Direction>("de");
-  const [result, setResult] = useState<CardRow | null>(null);
+  const [result, setResult] = useState<SearchResult | null>(null);
   const [notice, setNotice] = useState("");
   const [missing, setMissing] = useState(false);
   const [showSignIn, setShowSignIn] = useState(false);
@@ -22,6 +24,7 @@ export default function CardSearchPage() {
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!term.trim() || loading) return;
+    const submittedTerm = term.trim();
     setLoading(true); setResult(null); setNotice(""); setSaved(false); setMissing(false);
     try {
       const target = source === "de" ? "en" : "de";
@@ -35,7 +38,7 @@ export default function CardSearchPage() {
         const payload: { found: boolean; card: { id: string; content: LearningCardContent } | null } = await response.json();
         if (payload.found && payload.card) { found = payload.card; break; }
       }
-      if (found) setResult(found);
+      if (found) setResult({ ...found, searchedSource: source, searchedTerm: submittedTerm });
       else setMissing(true);
     } catch { setNotice("Search is temporarily unavailable. Please try again."); }
     finally { setLoading(false); }
@@ -60,6 +63,7 @@ export default function CardSearchPage() {
     } catch { setNotice("Saving is unavailable on this device."); }
   }
   const card = result?.content;
+  const display = card && result ? getCardDisplay(card, result.searchedSource, result.searchedTerm) : null;
   const curatedGrammar = card?.type === "sentence" && card.sourceLanguage === "de"
     ? curatedSentenceGrammar.find(entry => entry.term === card.term)
     : undefined;
@@ -102,11 +106,21 @@ export default function CardSearchPage() {
       </section>}
       {notice && <p role="status" className="mt-8 rounded-2xl border border-[#e8d5b3] bg-[#fff0d4] p-5">{notice}</p>}
       {card && <article aria-live="polite" className="mt-10 overflow-hidden rounded-[30px] border-2 border-[#d9d4c9] bg-white shadow-[6px_7px_0_#e8e1d6]">
-        <div className="bg-[#e6f2ec] px-6 py-7 sm:px-9">
-          <div className="mb-3 flex items-center justify-between gap-2"><span className="rounded-full bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-wider">{card.type === "word" ? "✎ Word card" : "✉ Sentence card"}</span><button onClick={() => pronounce(card.term)} className="rounded-full border border-[#a4c5b9] bg-white px-3 py-2 text-sm" aria-label="Listen to pronunciation">🔊 Listen</button></div>
-          <h2 className="break-words text-3xl font-black sm:text-4xl">{card.term}</h2>
-          <p className="mt-3 break-words text-xl leading-relaxed text-[#3f6d64]">↳ {card.translation}</p>
-          {card.pronunciation && <p className="mt-2 text-sm text-[#5d7770]">{card.pronunciation}</p>}
+        <div className="bg-[#e6f2ec] px-5 py-6 sm:px-9 sm:py-8">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-black uppercase tracking-wider">{card.type === "word" ? "✎ Word card" : "✉ Sentence card"}</span>
+            <button type="button" onClick={() => pronounce(card.term)} className="rounded-full border border-[#a4c5b9] bg-white px-3 py-2 text-xs font-bold sm:text-sm" aria-label={`Listen to ${card.sourceLanguage === "de" ? "German" : "English"} pronunciation`}>🔊 Listen ({card.sourceLanguage === "de" ? "DE" : "EN"})</button>
+          </div>
+          {display && <>
+            <p className="text-xs font-black uppercase tracking-widest text-[#3f6d64]">{display.headlineLanguage === "de" ? "German translation" : "English translation"}</p>
+            <h2 className="mt-2 break-words text-3xl font-black leading-tight tracking-tight sm:text-4xl">{display.headline}</h2>
+            {display.otherMeanings.length > 0 && <p className="mt-3 break-words text-sm leading-relaxed text-[#436d63]"><span className="font-bold">Also:</span> {display.otherMeanings.join(" · ")}</p>}
+            <div className="mt-5 rounded-2xl border border-[#cde2d7] bg-white/75 px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-wide text-[#58766d]">{display.supportingLabel} · {display.supportingLanguage === "de" ? "German" : "English"}</p>
+              <p className="mt-1 break-words text-base font-bold leading-relaxed sm:text-lg">{display.supporting}</p>
+              {card.pronunciation && <p className="mt-1 text-xs text-[#5d7770]">Pronunciation: {card.pronunciation}</p>}
+            </div>
+          </>}
         </div>
         <div className="space-y-6 p-6 sm:p-9">
           {card.type === "word" ? <>
