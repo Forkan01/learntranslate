@@ -276,6 +276,12 @@ export default function AdminAccessPage() {
                       </ul>
                     </div>
                   ) : null}
+                  {selected.status === "review" && (
+                    <details className="mt-4 rounded-xl border border-[#b9cec1] bg-white p-3">
+                      <summary className="cursor-pointer text-sm font-black">Inspect every structured card field</summary>
+                      <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(selected.content, null, 2)}</pre>
+                    </details>
+                  )}
                   {selected.status === "draft" && (
                     <Link href={"/admin/edit/" + selected.id}
                       className="mt-5 inline-block rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">
@@ -302,7 +308,7 @@ export default function AdminAccessPage() {
                         <button type="button" disabled={transitioning || !publishChecked}
                           onClick={() => void transition(selected,"publish")}
                           className="rounded-xl bg-[#668d84] px-4 py-3 text-sm font-black text-white disabled:opacity-40">
-                          Publish to public Search
+                          Approve & Publish to public Search
                         </button>
                         <button type="button" disabled={transitioning}
                           onClick={() => void transition(selected,"reject")}
