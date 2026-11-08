@@ -127,6 +127,9 @@ export default function AdminAccessPage() {
             <>
               <h1 className="mt-7 text-3xl font-black tracking-tight">Card review dashboard</h1>
               <p className="mt-2 max-w-2xl text-sm text-[#64717a]">Browse your Word and Sentence Cards, including drafts awaiting approval. This milestone is read-only; editing and publishing are not enabled.</p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link href="/admin/new" className="rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">+ Create private draft</Link>
+              </div>
               <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="text-sm font-bold">Status
                   <select value={filterStatus} onChange={event => {
