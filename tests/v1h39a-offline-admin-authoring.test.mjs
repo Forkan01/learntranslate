@@ -52,6 +52,22 @@ test("manual sentence template and English source keep direction explicit", () =
   assert.equal(en.content.grammar.partOfSpeech, "other");
 });
 
+test("manual draft can be written as UTF-8 and existing files are not overwritten", () => {
+  const dir = mkdtempSync(join(tmpdir(), "lt-h39a-out-"));
+  const path = join(dir, "draft.json");
+  try {
+    const first = run(draftScript, ["sentence", "Das ist hilfreich.", "conversations", "--out", path]);
+    assert.equal(first.status, 0, first.stderr);
+    const before = readFileSync(path, "utf8");
+    assert.equal(JSON.parse(before)[0].content.term, "Das ist hilfreich.");
+    const second = run(draftScript, ["word", "anderes", "daily-life", "--out", path]);
+    assert.notEqual(second.status, 0);
+    assert.equal(readFileSync(path, "utf8"), before);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("unfinished manual draft cannot be imported accidentally", () => {
   const draft = run(draftScript, ["word", "die Entscheidung", "work-career"]);
   assert.equal(draft.status, 0, draft.stderr);
