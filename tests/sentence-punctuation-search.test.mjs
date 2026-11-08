@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 const source = readFileSync(new URL("../src/lib/cards/sentence-lookup.ts", import.meta.url), "utf8");
 test("sentence lookup preserves internal text and strips only terminal punctuation", () => {
   assert.match(source, /normalizeSearchTerm/);
-  assert.match(source, /[.]!\?/);
+  assert.ok(source.includes("replace(/[.!?。！？]+$/u"));
   assert.match(source, /wanted\.length > 0/);
 });
 test("sentence fallback is limited to published sentence cards", () => {
