@@ -7,16 +7,30 @@
  * node scripts/create-card-draft.mjs sentence "Ich hätte gern einen Termin." conversations
  * node scripts/create-card-draft.mjs word "habit" daily-life en
  *
- * Redirect stdout to a JSON file, fill every blank, then validate with
- * scripts/build-vocabulary-import.mjs <file> --check.
+ * Optional: --out path/to/file.json (refuses to overwrite an existing file).
+ * Fill every blank, then validate with scripts/build-vocabulary-import.mjs <file> --check.
  */
-const [type, term, category, source = "de"] = process.argv.slice(2);
+import { writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const args = process.argv.slice(2);
+const outIndex = args.indexOf("--out");
+let outputPath;
+if (outIndex !== -1) {
+  if (outIndex !== args.length - 2 || !args[outIndex + 1]) {
+    console.error("Use --out <file.json> at the end of the command.");
+    process.exit(2);
+  }
+  outputPath = args[outIndex + 1];
+  args.splice(outIndex, 2);
+}
+const [type, term, category, source = "de"] = args;
 if (!["word", "sentence"].includes(type) ||
     typeof term !== "string" || !term.trim() || term.length > 500 ||
     typeof category !== "string" || category.length > 64 ||
     !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(category) ||
-    !["de", "en"].includes(source) || process.argv.length > 6) {
-  console.error('Usage: node scripts/create-card-draft.mjs <word|sentence> "<term>" <category-slug> [de|en]');
+    !["de", "en"].includes(source) || args.length > 4) {
+  console.error('Usage: node scripts/create-card-draft.mjs <word|sentence> "<term>" <category-slug> [de|en] [--out file.json]');
   process.exit(2);
 }
 const article = source === "de" ? /^(der|die|das)\s+/u.exec(term.trim())?.[1] : undefined;
@@ -42,4 +56,10 @@ const content = type === "word"
       grammarBreakdown: [],
       wordBreakdown: [],
     };
-process.stdout.write(JSON.stringify([{ content, categories: [category] }], null, 2) + "\n");
+const output = JSON.stringify([{ content, categories: [category] }], null, 2) + "\n";
+if (outputPath) {
+  writeFileSync(resolve(outputPath), output, { flag: "wx", encoding: "utf8" });
+  process.stdout.write("Draft created: " + outputPath + " (fill blanks before importing).\n");
+} else {
+  process.stdout.write(output);
+}
