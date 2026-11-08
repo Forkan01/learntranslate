@@ -19,6 +19,14 @@ export function auditLearningCard(content) {
       });
     }
   }
-  if (content.type === "sentence" && !nonempty(content.naturalMeaning)) issues.push("missing_natural_meaning");
+  if (content.type === "sentence") {
+    if (!nonempty(content.naturalMeaning)) issues.push("missing_natural_meaning");
+    // Optional teaching details may be absent, but must be well-formed when provided.
+    if (content.grammarBreakdown !== undefined &&
+        (!Array.isArray(content.grammarBreakdown) || content.grammarBreakdown.some(note => !nonempty(note)))) issues.push("invalid_grammar_breakdown");
+    if (content.wordBreakdown !== undefined &&
+        (!Array.isArray(content.wordBreakdown) || content.wordBreakdown.some(item =>
+          !item || !nonempty(item.word) || !nonempty(item.meaning)))) issues.push("invalid_word_breakdown");
+  }
   return issues;
 }
