@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { decideMagicLinkEmailSend } from "@/lib/cards/magic-link-send-preflight.mjs";
 
 type AuthState = "idle" | "sending" | "sent" | "already-signed-in";
 
@@ -41,19 +42,14 @@ export default function GenerationSignIn() {
         method: "GET", credentials: "same-origin", cache: "no-store",
         signal: AbortSignal.timeout(8000),
       });
-      if (!session.ok) {
+      const payload: unknown = session.ok ? await session.json() : null;
+      const decision = decideMagicLinkEmailSend(session.status, payload);
+      if (decision === "uncertain") {
         setState("idle");
-        setMessage("Could not confirm your current session. No email was sent; please check /api/auth/session before retrying.");
+        setMessage("Your current session could not be checked. No email was sent; check /api/auth/session before trying again.");
         return;
       }
-      const payload: unknown = await session.json();
-      if (!payload || typeof payload !== "object" || Array.isArray(payload) ||
-          !("signedIn" in payload) || typeof payload.signedIn !== "boolean") {
-        setState("idle");
-        setMessage("The session check was inconclusive. No email was sent.");
-        return;
-      }
-      if (payload.signedIn) {
+      if (decision === "already-signed-in") {
         setState("already-signed-in");
         setMessage("You are already signed in. No new email was needed.");
         return;
@@ -75,7 +71,7 @@ export default function GenerationSignIn() {
       }
       setState("sent");
       setMessage("Check your email and open the confirmation link. The link will return you to LearnTranslate.");
-    } catch { setState("idle"); setMessage("Could not contact the email service. Check your connection and try again later."); }
+    } catch { setState("idle"); setMessage("A network error occurred. Check your inbox and browser session before trying again; an email may already have been sent."); }
   }
   return <div className="mt-4 rounded-2xl border border-[#ddcfb5] bg-white p-4">
     <h3 className="font-black">✉ Sign in for future AI access</h3>
