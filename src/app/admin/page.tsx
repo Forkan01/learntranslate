@@ -126,7 +126,7 @@ export default function AdminAccessPage() {
           ) : (
             <>
               <h1 className="mt-7 text-3xl font-black tracking-tight">Card review dashboard</h1>
-              <p className="mt-2 max-w-2xl text-sm text-[#64717a]">Browse your Word and Sentence Cards, including drafts awaiting approval. This milestone is read-only; editing and publishing are not enabled.</p>
+              <p className="mt-2 max-w-2xl text-sm text-[#64717a]">Browse Word and Sentence Cards, including private drafts. Drafts can be edited; publishing is not enabled.</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href="/admin/new" className="rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">+ Create private draft</Link>
               </div>
@@ -221,6 +221,12 @@ export default function AdminAccessPage() {
                       </ul>
                     </div>
                   ) : null}
+                  {selected.status === "draft" && (
+                    <Link href={"/admin/edit/" + selected.id}
+                      className="mt-5 inline-block rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">
+                      Edit private draft →
+                    </Link>
+                  )}
                   <p className="mt-4 text-xs text-[#748078]">Updated {selected.updatedAt.slice(0, 10)} · Read-only preview</p>
                 </section>
               )}
