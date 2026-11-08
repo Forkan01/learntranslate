@@ -1,88 +1,112 @@
-# H.39C.2 — Fix local magic-link callback (no SMTP required)
+# H.39C.2 — One-email-safe magic-link callback
 
-## Why the original admin sign-in failed
+## Why we changed the existing callback
 
-Supabase verified the user's magic-link email, but the LearnTranslate
-`/auth/callback` page repeatedly displayed **No sign-in token found**.
+The local Next.js sign-in showed “No sign-in token found” even after
+Supabase recorded a login. The original React `useEffect` read and
+immediately scrubbed the URL fragment. React StrictMode deliberately
+replays effects in development: the first effect was cancelled, while
+the second found no tokens. This is a strong plausible explanation,
+**not proof that an email scanner could not also have consumed the link**.
 
-The callback previously did this in its React `useEffect`:
-1. Extract `access_token` and `refresh_token` from the URL fragment.
-2. Immediately scrub the fragment with `window.history.replaceState`.
-3. Asynchronously verify identity and send the credential pair to the
-   existing HttpOnly session endpoint.
+This PR captures the fragment once in an in-memory React ref, reuses it
+on effect replay, and immediately removes the sensitive fragment from
+the browser URL. There is no token storage in localStorage/sessionStorage.
 
-**React StrictMode intentionally executes an extra development-only
-effect setup/cleanup/setup cycle.** The first setup captures and removes the
-fragment; the first cleanup cancels asynchronous processing. A second setup
-then sees an empty fragment and incorrectly reports missing credentials.
-This is a strong explanation for the repeatable local `npm run dev` failure.
-It is still possible for an email scanner to consume a single-use link;
-this fix does not guarantee against external scanners.
+It also avoids spending another sign-in email if:
+- `GET /api/auth/session` already confirms an authenticated browser.
+- The session preflight is inconclusive (for example, a 503).
+- The callback is reopened without the original URL fragment but a
+  session already exists.
 
-## Fix
+After Supabase validates the email, the original server session POST
+still binds and rotates the token pair. The callback now confirms the
+HttpOnly browser session with a fresh no-email GET before stating
+**Signed in successfully**.
 
-The browser now captures the URL fragment *once* in a component `useRef`
-and reuses the parsed, in-memory credential pair if React replays the effect.
-It still immediately removes credentials from the visible URL. The cancelled
-effect does not establish a session; the active one verifies the token with
-Supabase and posts to the same existing authenticated server endpoint.
-The ref is cleared after successful verification or an exception.
+## Supabase restrictions
 
-No new auth provider, email template, SMTP setup, client-side credential
-persistence, privileged route, or database migration is required.
+This project uses Supabase's built-in email sender with a user-reported
+limit of **two sign-in emails per hour**. Each magic link is single-use.
+This milestone does not configure SMTP, change email templates, issue
+auth tokens, change RLS or bypass the existing admin identity gate.
 
-## Important correction to previous OTP instructions
+**Do not request an email until the zero-email preflight is complete.**
 
-Supabase displayed **Set up custom SMTP to edit templates** in the connected
-project's Authentication → Emails → Magic link or OTP screen.
-Therefore the previously proposed **six-digit OTP** plan is blocked without
-additional email infrastructure. This PR replaces it with the minimal
-magic-link callback fix. **Do not configure custom SMTP for this milestone.**
-Keep the default Supabase template as-is.
+## Preflight (zero email sends)
 
-## Local setup and verification
-
-Keep your local `.env.local` settings for the existing admin gate:
-
-```dotenv
-ENABLE_LEARNTRANSLATE_ADMIN=true
-LEARNTRANSLATE_ADMIN_USER_ID=<existing-Supabase-Auth-user-UUID>
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-Do not paste keys, one-time link URLs, access/refresh tokens or session
-cookies into GitHub, issue comments or chat.
-
-1. Run local tests, lint, TS and production build.
-2. Run `npm run dev` on the updated branch.
-3. Open `http://localhost:3000/search`, search a missing word and click
-   **Sign in (preview)**.
-4. Request a fresh magic link for the same existing Supabase account.
-5. Open the email link **exactly once**, in the browser with the local app.
-6. The callback should display **Signed in successfully!**.
-7. In the same browser, open `http://localhost:3000/api/admin/access`.
-   The authorized account should return `{"authorized":true}`.
-8. Visit `http://localhost:3000/admin`. The card listing will remain
-   unavailable until the separate server-only review-read flag and service
-   credential are configured. No mutation or publishing is enabled.
-
-If the email provider has an aggressive URL scanner, the link may be
-consumed before the browser arrives. That is a separate issue. Do not
-disable safe-link protection or print token-bearing URLs as a workaround.
-
-## Windows PowerShell verification
+1. Switch to the branch and run the local Node suite, TypeScript, lint
+   and production build. If standalone `tsc` complains about a stale
+   deleted route in `.next/types`, run `npm run build` **before** `tsc`.
+2. Confirm `.env.local` (do not publish or paste this file) has:
+   - `ENABLE_LEARNTRANSLATE_ADMIN=true`
+   - `LEARNTRANSLATE_ADMIN_USER_ID=` the UUID for the existing Auth user
+   - `NEXT_PUBLIC_APP_URL=http://localhost:3000`
+   - The existing Supabase project URL and publishable key.
+3. In the Supabase dashboard, check **Authentication → URL Configuration**:
+   `http://localhost:3000/auth/callback` must be an allowed redirect.
+   This is a read-only check; the previous local redirect was working.
+4. Stop `npm run dev` and run a *production-mode local server* after
+   building:
 
 ```powershell
-node --test tests/v1h39c2-strict-magic-link-callback.test.mjs
-node --test tests/*.test.mjs
-npx tsc --noEmit
-npm run lint
 npm run build
+npx tsc --noEmit
+npm run start
 ```
 
-Existing H.39B/H.39C authorization and database security restrictions
-are unchanged.
+The production-mode server avoids React development's extra effect
+replay, giving us a controlled one-shot browser test.
+
+5. In **Chrome on the same computer and same browser profile**, open
+   `http://localhost:3000/api/auth/session`. It should return
+   `{"signedIn":false}` if not signed in, or `{"signedIn":true}` if
+   the browser already has a valid session. A 503 or unexpected result
+   is a STOP sign; no email should be sent.
+6. In the same browser open `http://localhost:3000/api/admin/access`.
+   If signed in and authorized, it returns `{"authorized":true}` — no
+   email required. If signed out, it returns `{"authorized":false}`
+   with HTTP 401 (admin enabled).
+
+## Exactly one email attempt — only after preflight passes
+
+1. Open `http://localhost:3000/search`, search an unpublished term,
+   click **Sign in (preview)**, enter the same existing Supabase email.
+2. Click **Send sign-in link ONCE**. The form checks your existing
+   session first and refuses to spend an email on an uncertain result.
+3. Open the new magic link once in the same Chrome browser. Avoid link
+   previews and other devices. Never paste the token-bearing link in chat.
+4. Callback should say:
+   **Signed in successfully! Your browser session is confirmed.**
+5. Open the local `/api/admin/access` endpoint in the same browser.
+   Expected: `{"authorized":true}`. Then open `/admin`.
+
+If the callback reports any failure, **do not request the second email**.
+First inspect `/api/auth/session` and `/api/admin/access` and share
+only the HTTP statuses and redacted error messages. Never share actual
+tokens, cookies, sign-in email URLs, or `.env.local` contents.
+
+The card dashboard remains read-only and may show a database
+unavailable message until the separately gated private card-read
+configuration is enabled.
+
+## Laptop test commands
+
+```powershell
+git fetch origin
+git switch feature/v1-h39c2-email-otp-session-recovery
+git pull --ff-only
+node --test tests/v1h39c2-strict-magic-link-callback.test.mjs
+node --test tests/v1h39c2-one-email-preflight.test.mjs
+node --test tests/*.test.mjs
+npm run lint
+npm run build
+npx tsc --noEmit
+```
+
+No email is sent by these commands.
 
 References:
 - https://react.dev/reference/react/useEffect
+- https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie
 - https://supabase.com/docs/guides/auth/auth-email-passwordless
