@@ -74,7 +74,12 @@ test("server gate gets only the signed-in user's HttpOnly cookie and verifies wi
   assert.match(serverGate, /process\.env\.ENABLE_LEARNTRANSLATE_ADMIN/);
   assert.match(serverGate, /process\.env\.LEARNTRANSLATE_ADMIN_USER_ID/);
   assert.doesNotMatch(serverGate, /request\.headers\.get\("x-admin|request\.nextUrl\.searchParams/);
-  assert.doesNotMatch(serverGate, /SUPABASE_SERVICE_ROLE_KEY|user_metadata/);
+  // Inspect executable source, not security commentary that mentions unsafe
+  // examples to warn maintainers never to rely on them.
+  const executableGate = serverGate
+    .replace(/\\/\\*[\\s\\S]*?\\*\\//g, "")
+    .replace(/^\\s*\\/\\/.*$/gm, "");
+  assert.doesNotMatch(executableGate, /SUPABASE_SERVICE_ROLE_KEY|user_metadata/);
 });
 
 test("admin endpoint is GET-only with no secrets and no cache", () => {
