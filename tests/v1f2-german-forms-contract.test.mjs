@@ -15,5 +15,6 @@ test("article and plural matching use explicit grammar data", () => {
   assert.match(source, /const bareSingularMatch = !suppliedArticle && wanted === singularBare;/);
   assert.match(source, /const plural = noun\?\.partOfSpeech === "noun" && typeof noun\.plural === "string"/);
   assert.match(source, /normalizeSearchTerm\(noun\.plural, "de"\)/);
-  assert.match(source, /withoutArticle === singularBare/);
+  assert.match(source, /const pluralMatch = plural !== ""/);
+  assert.match(source, /withoutArticle === plural/);
 });
