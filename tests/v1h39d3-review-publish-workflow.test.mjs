@@ -159,7 +159,8 @@ test("dashboard requires explicit confirmation before public publishing",()=>{
   assert.match(dashboard,/I personally checked that this card is accurate/);
   assert.match(dashboard,/Submit completed card for review/);
   assert.match(dashboard,/Return to Draft for corrections/);
-  assert.match(dashboard,/Publish to public Search/);
+  assert.match(dashboard,/Approve & Publish to public Search/);
+  assert.match(dashboard,/Inspect every structured card field/);
   assert.match(dashboard,/Reject card/);
   assert.match(dashboard,/Read-only preview/);
   assert.doesNotMatch(dashboard,/SUPABASE_SERVICE_ROLE_KEY/);
