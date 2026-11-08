@@ -95,6 +95,7 @@ export async function GET(request: Request) {
         typeof row.content !== "object" || row.content === null)) {
       throw new Error("Invalid card response");
     }
+    let match: Record<string, unknown> | undefined = row;
     // Sentence searches tolerate a missing or differing terminal period/question mark.
     // Keep this restricted to complete, exact normalized sentences (no substring/fuzzy matches).
     if (!match && type === "sentence") {
@@ -120,7 +121,7 @@ export async function GET(request: Request) {
     // Reverse English lookup for the initial German→English published collection.
     // Only exact translation senses are accepted; no fuzzy or substring matches.
     // Bounded pagination supports growth beyond the initial curated V1 dataset.
-    let match: Record<string, unknown> | undefined = row;
+
     if (!match && source === "en" && target === "de") {
       const reverseUrl = new URL("/rest/v1/cards", url.origin);
       reverseUrl.searchParams.set("select", "id,search_key,status,content,created_at,updated_at");
