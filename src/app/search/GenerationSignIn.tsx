@@ -63,6 +63,6 @@ export default function GenerationSignIn() {
         <button type="submit" disabled={state === "sending"} className="rounded-xl bg-[#668d84] px-4 py-3 font-bold text-white disabled:opacity-50">Send sign-in link</button>
       </form>}
     {message && <p role="status" className="mt-3 text-sm text-[#6c6050]">{message}</p>}
-    <p className="mt-3 text-xs text-[#77756e]">Email link verification is a preview. It does not enable generation or keep you signed in after refresh.</p>
+    <p className="mt-3 text-xs text-[#77756e]">Having trouble with magic links? <a className="font-bold underline" href="/auth/sign-in">Sign in with an email code instead.</a> AI generation remains disabled.</p>
   </div>;
 }
