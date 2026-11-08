@@ -74,6 +74,10 @@ export default function AdminAccessPage() {
     if (state !== "authorized") return;
     const controller = new AbortController();
     void (async () => {
+      // Defer updates until after effect setup; do not synchronously set React
+      // state while an effect is executing.
+      await Promise.resolve();
+      if (controller.signal.aborted) return;
       setLoadState("loading");
       setCards(null);
       setSelectedId(null);
