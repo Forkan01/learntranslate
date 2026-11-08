@@ -29,7 +29,7 @@ const headings: Record<Exclude<AccessState, "authorized">, { title: string; deta
   checking: { title: "Checking access…", detail: "Verifying your LearnTranslate session." },
   "sign-in": {
     title: "Sign in required",
-    detail: "Sign in using your existing LearnTranslate email account, then return here. Ordinary accounts do not receive administrator privileges.",
+    detail: "Sign in to LearnTranslate, then return here. Regular signed-in accounts do not receive administrator privileges.",
   },
   restricted: { title: "Access restricted", detail: "This account cannot manage LearnTranslate cards." },
   disabled: { title: "Admin tools are disabled", detail: "An administrator must explicitly enable access on the server." },
@@ -118,7 +118,7 @@ export default function AdminAccessPage() {
               <h1 className="text-3xl font-black tracking-tight">{headings[state].title}</h1>
               <p role="status" className="mt-3 text-[#64717a]">{headings[state].detail}</p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={state === "sign-in" ? "/auth/sign-in" : "/search"} className="rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-bold text-white">{state === "sign-in" ? "Sign in with email code →" : "Go to Search"}</Link>
+                <Link href="/search" className="rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-bold text-white">Go to Search</Link>
                 <button type="button" onClick={() => window.location.reload()}
                   className="rounded-2xl border px-5 py-3 text-sm font-bold">Check again</button>
               </div>
