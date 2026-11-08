@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sentenceLookupMatches } from "@/lib/cards/sentence-lookup";
 import { makeCardSearchKey, normalizeSearchTerm, type CardLanguage, type CardType } from "@/lib/cards/schema";
 
 // Scan published cards in bounded pages rather than silently ignoring cards after row 500.
@@ -94,10 +95,33 @@ export async function GET(request: Request) {
         typeof row.content !== "object" || row.content === null)) {
       throw new Error("Invalid card response");
     }
+    let match: Record<string, unknown> | undefined = row;
+    // Sentence searches tolerate a missing or differing terminal period/question mark.
+    // Keep this restricted to complete, exact normalized sentences (no substring/fuzzy matches).
+    if (!match && type === "sentence") {
+      const sentenceUrl = new URL("/rest/v1/cards", url.origin);
+      sentenceUrl.searchParams.set("select", "id,search_key,status,content,created_at,updated_at");
+      sentenceUrl.searchParams.set("source_language", "eq." + source);
+      sentenceUrl.searchParams.set("target_language", "eq." + target);
+      sentenceUrl.searchParams.set("type", "eq.sentence");
+      sentenceUrl.searchParams.set("status", "eq.published");
+      sentenceUrl.searchParams.set("order", "term.asc");
+      sentenceUrl.searchParams.set("limit", "500");
+      const sentencePredicate = (candidate: Record<string, unknown>): boolean => {
+        if (candidate.status !== "published" || !candidate.content ||
+            typeof candidate.content !== "object" || Array.isArray(candidate.content)) return false;
+        const content = candidate.content as Record<string, unknown>;
+        return content.type === "sentence" && content.sourceLanguage === source &&
+          content.targetLanguage === target && typeof content.term === "string" &&
+          sentenceLookupMatches(term, content.term, source as CardLanguage);
+      };
+      match = await tryIndexedFallback(url.origin, key, term, source, target, type, sentencePredicate);
+      if (!match) match = await findPublishedFallback(sentenceUrl, key, sentencePredicate);
+    }
     // Reverse English lookup for the initial German→English published collection.
     // Only exact translation senses are accepted; no fuzzy or substring matches.
     // Bounded pagination supports growth beyond the initial curated V1 dataset.
-    let match: Record<string, unknown> | undefined = row;
+
     if (!match && source === "en" && target === "de") {
       const reverseUrl = new URL("/rest/v1/cards", url.origin);
       reverseUrl.searchParams.set("select", "id,search_key,status,content,created_at,updated_at");
