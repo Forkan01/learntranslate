@@ -117,10 +117,11 @@ test("unpublished-card listing has extra server-only opt-in and uses no browser 
   assert.match(ui, /state !== "authorized"/);
 });
 
-test("dashboard shows a read-only filterable review list without any mutation controls", () => {
+test("dashboard retains read-only listing, while transitions use a separate endpoint", () => {
   assert.match(ui, /value={filterStatus}/);
   assert.match(ui, /value={filterType}/);
   assert.match(ui, /setOffset\(offset \+ 20\)/);
   assert.match(ui, /Read-only preview/);
-  assert.doesNotMatch(ui, /fetch\([^)]*,\s*\{\s*method:\s*"(POST|PUT|PATCH|DELETE)"/);
+  assert.match(route, /export async function GET/);
+  assert.doesNotMatch(route, /export async function (POST|PUT|PATCH|DELETE)/);
 });
