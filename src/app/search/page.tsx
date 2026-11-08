@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { LearningCardContent } from "@/lib/cards/schema";
 import GenerationSignIn from "./GenerationSignIn";
+import { curatedSentenceGrammar } from "@/lib/cards/curated-sentence-grammar.mjs";
 import SessionStatus from "./SessionStatus";
 
 type CardRow = { id: string; content: LearningCardContent };
@@ -59,6 +60,11 @@ export default function CardSearchPage() {
     } catch { setNotice("Saving is unavailable on this device."); }
   }
   const card = result?.content;
+  const curatedGrammar = card?.type === "sentence" && card.sourceLanguage === "de"
+    ? curatedSentenceGrammar.find(entry => entry.term === card.term)
+    : undefined;
+  const grammarNotes = card?.type === "sentence" ? (card.grammarBreakdown?.length ? card.grammarBreakdown : curatedGrammar?.grammarBreakdown) : undefined;
+  const wordNotes = card?.type === "sentence" ? (card.wordBreakdown?.length ? card.wordBreakdown : curatedGrammar?.wordBreakdown) : undefined;
   return <div className="min-h-screen bg-[#fffaf2] text-[#343d4a]">
     <div className="mx-auto max-w-3xl px-5"><SessionStatus /></div>
     <header className="border-b-2 border-[#e8e0d6] bg-white/80">
@@ -111,8 +117,8 @@ export default function CardSearchPage() {
             {card.usageNotes?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Usage notes</summary><ul className="mt-3 list-inside list-disc">{card.usageNotes.map((note,i)=><li key={i}>{note}</li>)}</ul></details> : null}
           </> : <>
             <section className="rounded-2xl bg-[#fff0d5] p-5"><h3 className="font-black">✦ Natural meaning</h3><p className="mt-2 break-words leading-relaxed">{card.naturalMeaning}</p></section>
-            {card.grammarBreakdown?.length ? <details className="rounded-2xl bg-[#f1f4fb] p-5"><summary className="cursor-pointer font-black">Grammar breakdown</summary><ul className="mt-3 list-inside list-disc space-y-2">{card.grammarBreakdown.map((item,i)=><li key={i}>{item}</li>)}</ul></details> : null}
-            {card.wordBreakdown?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Word by word</summary><ul className="mt-3 space-y-2">{card.wordBreakdown.map((item,i)=><li key={i} className="break-words rounded-xl bg-white/70 p-3"><b>{item.word}</b> — {item.meaning}{item.note && <p className="mt-1 text-sm text-[#657180]">{item.note}</p>}</li>)}</ul></details> : null}
+            {grammarNotes?.length ? <details className="rounded-2xl bg-[#f1f4fb] p-5"><summary className="cursor-pointer font-black">Grammar breakdown</summary><ul className="mt-3 list-inside list-disc space-y-2">{grammarNotes.map((item,i)=><li key={i}>{item}</li>)}</ul></details> : null}
+            {wordNotes?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Word by word</summary><ul className="mt-3 space-y-2">{wordNotes.map((item,i)=><li key={i} className="break-words rounded-xl bg-white/70 p-3"><b>{item.word}</b> — {item.meaning}{item.note && <p className="mt-1 text-sm text-[#657180]">{item.note}</p>}</li>)}</ul></details> : null}
             {card.alternatives?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Other ways to say it</summary><ul className="mt-3 space-y-2">{card.alternatives.map((item,i)=><li key={i} className="break-words rounded-xl bg-white/70 p-3"><b>{item.text}</b> — {item.translation}{item.context && <p className="mt-1 text-sm text-[#657180]">{item.context}</p>}</li>)}</ul></details> : null}
           </>}
           <button onClick={() => save(card)} className="w-full rounded-2xl bg-[#f8df9f] px-5 py-4 font-black text-[#4f4638]">{saved ? "✓ Saved on this device" : "♡ Save this card"}</button>
