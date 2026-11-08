@@ -1,5 +1,3 @@
-import type { AdminDraftInsertResult } from "./create-draft.mjs";
-
 export type ReviewStatus = "draft" | "review" | "published" | "rejected";
 export type ReviewAction = "submit" | "publish" | "reject" | "revise";
 export type ReviewCard = {
