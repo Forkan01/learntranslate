@@ -37,7 +37,7 @@ function loadHandler({ enabled, rpcMode = "normal" }) {
     }
     const searchKey = u.searchParams.get("search_key");
     // A REST lookup by search_key is exact; fallback scans must include all published cards.
-    const data = searchKey ? cards.filter(c => c.search_key === searchKey.slice(3)) : cards.filter(c => (!u.searchParams.get("type") || c.content.type === u.searchParams.get("type").replace(/^eq\\./, "")));
+    const data = searchKey ? cards.filter(c => c.search_key === searchKey.slice(3)) : cards.filter(c => (!u.searchParams.get("type") || c.content.type === u.searchParams.get("type").replace(/^eq\./, "")));
     return { ok: true, json: async () => data };
   };
   const mod = { exports: {} };
