@@ -105,7 +105,7 @@ test("the Saved collection offers a topic selector, filter and word/translation 
   assert.match(page, /import \{[\s\S]*SAVED_TOPICS, SAVED_TOPIC_STORAGE_KEY, savedCardKey, parseSavedTopics/);
   assert.match(page, /function readSavedTopics\(\): Record<string, string>/);
   assert.match(page, /const \[savedTopicFilter, setSavedTopicFilter\] = useState\("all"\)/);
-  assert.match(page, /const \[savedSearch, setSavedSearch\] = useState\("")/);
+  assert.match(page, /const \[savedSearch, setSavedSearch\] = useState\(""\)/);
   assert.match(page, /filterSavedCards\(savedCards, topicAssignments, savedTopicFilter, savedSearch\)/);
   assert.match(page, /htmlFor="saved-topic-filter"/);
   assert.match(page, /htmlFor="saved-search"/);
