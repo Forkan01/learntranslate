@@ -1,4 +1,4 @@
-# H.40A — Pastel, hand-drawn accordion layout for public Search Cards
+# H.40A — Pastel, hand-drawn accordion layout for public Search Cards (simplified)
 
 ## Intent
 Match the approved mobile-first LearnTranslate card design without changing
@@ -6,19 +6,24 @@ any API, card schema, storage, authentication or publication behavior.
 
 - Keep the **opposite-language translation large and always visible** at
   the top, including curated secondary meanings and the original searched text.
-- Place exactly four stacked, rounded, pastel teaching containers underneath:
-  **Meaning**, **Grammar**, **Examples (actual count)** and **Other Forms**.
-- All four containers are native HTML `<details>` elements, collapsed by
+- Do not repeat the translation in a separate Meaning container. For Sentence
+  Cards, keep the additional natural/contextual explanation visible just
+  below the primary translation. Preserve all curated usage notes in
+  **Other Forms**.
+- Place exactly **three** stacked, rounded, pastel teaching containers:
+  **Grammar**, **Examples (actual count)** and **Other Forms**.
+- Each container is a native HTML `<details>` element, collapsed by
   default, independently expandable by keyboard, mouse and touch.
-- Meaning: primary and secondary translations for Word Cards, natural meaning
-  for Sentence Cards; curated usage notes when available.
+- Use compact, consistent chevron-down **SVG icons** like the approved
+  illustration, aligned to the right. Icons rotate when expanded; do
+  not render the former oversized round arrow badges / text glyphs.
 - Grammar: Word part of speech, German noun article/plural and known verb
   forms; Sentence grammar breakdown and word-by-word explanations.
 - Examples: list the actual curated bilingual example count. Five examples
   for complete approved Word Cards; a truthful smaller/zero count for Sentence
   Cards when the data does not include five.
 - Other Forms: Word synonyms, antonyms, related words and curated common
-  expressions, or Sentence alternatives. Never invent content for missing
+  expressions, usage notes, or Sentence alternatives. Never invent content for missing
   fields; show a gentle empty state instead.
 - Preserve the existing **Listen** button and **Save this card** action.
 - Search still returns published-only results and existing direction-aware
@@ -59,13 +64,13 @@ npx tsc --noEmit
 ## Local browser acceptance
 Start with `npm run dev`; use `http://localhost:3000/search`:
 1. Search a published German word with examples. Confirm **English** is
-   the largest text, German original is smaller, and four pastel sections
+   the largest text, German original is smaller, and three pastel sections
    appear all collapsed.
-2. Expand Meaning, Grammar, Examples, Other Forms one at a time. Confirm
+2. Expand Grammar, Examples, Other Forms one at a time. Confirm
    each opens and closes on tap, all example translations are visible, and
    noun article and plural are readable where present.
 3. Search a known published German Sentence Card, such as
-   `Es kommt mir bekannt vor.`. Verify natural meaning, grammar notes,
+   `Es kommt mir bekannt vor.`. Verify natural meaning is visible under the translation, grammar notes,
    and a graceful empty state when optional examples/alternatives are absent.
 4. Switch to English → German, search a known published English sense,
    and confirm **German** is the headline without reversing the source
