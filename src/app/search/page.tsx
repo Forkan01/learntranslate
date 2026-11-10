@@ -122,20 +122,101 @@ export default function CardSearchPage() {
             </div>
           </>}
         </div>
-        <div className="space-y-6 p-6 sm:p-9">
-          {card.type === "word" ? <>
-            <section className="rounded-2xl bg-[#fff0d5] p-5"><h3 className="font-black">✦ At a glance</h3><div className="mt-3 flex flex-wrap gap-2 text-sm"><span className="rounded-full bg-white px-3 py-2 font-semibold capitalize">{card.grammar.partOfSpeech}</span>{card.grammar.article && <span className="rounded-full bg-white px-3 py-2 font-semibold">Article: {card.grammar.article}</span>}{card.grammar.plural && <span className="rounded-full bg-white px-3 py-2 font-semibold">Plural: {card.grammar.plural}</span>}</div></section>
-            <section><h3 className="text-lg font-black">✎ Real-life examples ({card.examples.length})</h3><ol className="mt-3 space-y-3">{card.examples.map((example,i) => <li key={i} className="rounded-2xl bg-[#f1f4fb] p-4"><span className="mr-2 text-xs font-black text-[#6b7da0]">{String(i+1).padStart(2,"0")}</span><span className="font-semibold">{example.source}</span><p className="mt-1 pl-6 text-sm text-[#657180]">{example.translation}</p>{example.note && <p className="mt-2 text-xs italic">{example.note}</p>}</li>)}</ol></section>
-            {(card.grammar.notes?.length || card.grammar.perfect || card.grammar.preterite) && <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Grammar details</summary><div className="mt-3 space-y-2 text-sm">{card.grammar.perfect && <p>Perfect: {card.grammar.perfect}</p>}{card.grammar.preterite && <p>Preterite: {card.grammar.preterite}</p>}{card.grammar.notes?.map((note,i)=><p key={i}>{note}</p>)}</div></details>}
-            {card.synonyms?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Synonyms</summary><p className="mt-3">{card.synonyms.join(" · ")}</p></details> : null}
-            {card.usageNotes?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Usage notes</summary><ul className="mt-3 list-inside list-disc">{card.usageNotes.map((note,i)=><li key={i}>{note}</li>)}</ul></details> : null}
-          </> : <>
-            <section className="rounded-2xl bg-[#fff0d5] p-5"><h3 className="font-black">✦ Natural meaning</h3><p className="mt-2 break-words leading-relaxed">{card.naturalMeaning}</p></section>
-            {grammarNotes?.length ? <details className="rounded-2xl bg-[#f1f4fb] p-5"><summary className="cursor-pointer font-black">Grammar breakdown</summary><ul className="mt-3 list-inside list-disc space-y-2">{grammarNotes.map((item,i)=><li key={i}>{item}</li>)}</ul></details> : null}
-            {wordNotes?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Word by word</summary><ul className="mt-3 space-y-2">{wordNotes.map((item,i)=><li key={i} className="break-words rounded-xl bg-white/70 p-3"><b>{item.word}</b> — {item.meaning}{item.note && <p className="mt-1 text-sm text-[#657180]">{item.note}</p>}</li>)}</ul></details> : null}
-            {card.alternatives?.length ? <details className="rounded-2xl bg-[#f9edf3] p-5"><summary className="cursor-pointer font-black">Other ways to say it</summary><ul className="mt-3 space-y-2">{card.alternatives.map((item,i)=><li key={i} className="break-words rounded-xl bg-white/70 p-3"><b>{item.text}</b> — {item.translation}{item.context && <p className="mt-1 text-sm text-[#657180]">{item.context}</p>}</li>)}</ul></details> : null}
-          </>}
-          <button onClick={() => save(card)} className="w-full rounded-2xl bg-[#f8df9f] px-5 py-4 font-black text-[#4f4638]">{saved ? "✓ Saved on this device" : "♡ Save this card"}</button>
+        <div className="space-y-4 bg-[#fffdfa] p-4 sm:p-7">
+          <p className="px-1 text-xs font-semibold tracking-wide text-[#7e817a]">Tap any section to explore. Your translation stays visible above.</p>
+
+          <details className="group rounded-[24px] border-2 border-[#e7d8b2] bg-[#fff0d5] p-4 shadow-[3px_4px_0_#eee2c9] sm:p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#e3ca8e] bg-white/75 text-2xl">💡</span>
+              <span className="min-w-0 flex-1 text-lg font-black tracking-tight">Meaning</span>
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/75 text-xl font-bold text-[#745a35] transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-4 space-y-3 border-t border-[#e7d8b2] pt-4 text-sm leading-relaxed sm:text-base">
+              {card.type === "sentence"
+                ? <p className="break-words font-medium">{card.naturalMeaning}</p>
+                : <p className="break-words"><span className="font-black">Primary translation:</span> {card.translation.split(";").map(s => s.trim()).filter(Boolean).join(" · ")}</p>}
+              {card.usageNotes?.length ? <ul className="list-inside list-disc space-y-2 text-[#665d50]">{card.usageNotes.map((note,i) => <li key={i}>{note}</li>)}</ul> : null}
+            </div>
+          </details>
+
+          <details className="group rounded-[24px] border-2 border-[#bbd8cc] bg-[#e6f2ec] p-4 shadow-[3px_4px_0_#d8e8de] sm:p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#b4d0c3] bg-white/80 text-2xl">✎</span>
+              <span className="min-w-0 flex-1 text-lg font-black tracking-tight">Grammar</span>
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-xl font-bold text-[#3f6d64] transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-4 space-y-4 border-t border-[#bbd8cc] pt-4 text-sm leading-relaxed">
+              {card.type === "word" ? <>
+                <div className="flex flex-wrap gap-2">
+                  <span className="rounded-full bg-white px-3 py-2 font-semibold capitalize">{card.grammar.partOfSpeech}</span>
+                  {card.grammar.article && <span className="rounded-full bg-white px-3 py-2 font-semibold">Article: {card.grammar.article}</span>}
+                  {card.grammar.plural && <span className="rounded-full bg-white px-3 py-2 font-semibold">Plural: {card.grammar.plural}</span>}
+                  {card.grammar.perfect && <span className="rounded-full bg-white px-3 py-2 font-semibold">Perfect: {card.grammar.perfect}</span>}
+                  {card.grammar.preterite && <span className="rounded-full bg-white px-3 py-2 font-semibold">Preterite: {card.grammar.preterite}</span>}
+                  {card.grammar.auxiliary && <span className="rounded-full bg-white px-3 py-2 font-semibold">Auxiliary: {card.grammar.auxiliary}</span>}
+                  {card.grammar.separable !== undefined && <span className="rounded-full bg-white px-3 py-2 font-semibold">{card.grammar.separable ? "Separable verb" : "Non-separable verb"}</span>}
+                  {card.grammar.reflexive && <span className="rounded-full bg-white px-3 py-2 font-semibold">Reflexive verb</span>}
+                </div>
+                {card.grammar.notes?.length ? <ul className="list-inside list-disc space-y-2">{card.grammar.notes.map((note,i) => <li key={i}>{note}</li>)}</ul> : null}
+              </> : <>
+                {grammarNotes?.length ? <div>
+                  <h4 className="font-black">Grammar breakdown</h4>
+                  <ul className="mt-2 list-inside list-disc space-y-2">{grammarNotes.map((item,i) => <li key={i}>{item}</li>)}</ul>
+                </div> : null}
+                {wordNotes?.length ? <div>
+                  <h4 className="font-black">Word by word</h4>
+                  <ul className="mt-2 space-y-2">{wordNotes.map((item,i) => <li key={i} className="break-words rounded-xl bg-white/75 p-3"><b>{item.word}</b> — {item.meaning}{item.note && <p className="mt-1 text-sm text-[#657180]">{item.note}</p>}</li>)}</ul>
+                </div> : null}
+                {!grammarNotes?.length && !wordNotes?.length && <p className="text-[#58746b]">No additional grammar breakdown is available for this sentence yet.</p>}
+              </>}
+            </div>
+          </details>
+
+          <details className="group rounded-[24px] border-2 border-[#cfd9ed] bg-[#f1f4fb] p-4 shadow-[3px_4px_0_#e2e6f1] sm:p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#cad3e6] bg-white/85 text-2xl">📝</span>
+              <span className="min-w-0 flex-1 text-lg font-black tracking-tight">Examples ({card.type === "word" ? card.examples.length : card.examples?.length ?? 0})</span>
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/85 text-xl font-bold text-[#536a91] transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-4 border-t border-[#cfd9ed] pt-4">
+              {(card.examples?.length ?? 0) > 0 ? <ol className="space-y-3">
+                {card.examples?.map((example,i) => <li key={i} className="rounded-2xl border border-white bg-white/80 p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e6ebf7] text-xs font-black text-[#58709b]">{i+1}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#677b9f]">{card.sourceLanguage === "de" ? "German" : "English"}</span>
+                  </div>
+                  <p className="mt-2 break-words font-semibold">{example.source}</p>
+                  <p className="mt-2 break-words text-sm leading-relaxed text-[#5f6c84]"><span className="mr-2 text-[10px] font-bold uppercase tracking-wider">{card.targetLanguage === "de" ? "German" : "English"}</span>{example.translation}</p>
+                  {example.note && <p className="mt-2 text-xs italic text-[#60728b]">{example.note}</p>}
+                </li>)}
+              </ol> : <p className="text-sm text-[#60728b]">No curated examples are available for this card yet.</p>}
+            </div>
+          </details>
+
+          <details className="group rounded-[24px] border-2 border-[#e5cddd] bg-[#f9edf3] p-4 shadow-[3px_4px_0_#eddee8] sm:p-5">
+            <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#e3c6d6] bg-white/80 text-2xl">✿</span>
+              <span className="min-w-0 flex-1 text-lg font-black tracking-tight">Other Forms</span>
+              <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/80 text-xl font-bold text-[#85576e] transition-transform group-open:rotate-180">⌄</span>
+            </summary>
+            <div className="mt-4 space-y-4 border-t border-[#e5cddd] pt-4 text-sm leading-relaxed">
+              {card.type === "word" ? <>
+                {card.synonyms?.length ? <div><h4 className="font-black">Synonyms</h4><p className="mt-1 break-words">{card.synonyms.join(" · ")}</p></div> : null}
+                {card.antonyms?.length ? <div><h4 className="font-black">Antonyms</h4><p className="mt-1 break-words">{card.antonyms.join(" · ")}</p></div> : null}
+                {card.relatedWords?.length ? <div><h4 className="font-black">Related words</h4><p className="mt-1 break-words">{card.relatedWords.join(" · ")}</p></div> : null}
+                {card.commonExpressions?.length ? <div><h4 className="font-black">Common expressions</h4><ul className="mt-2 space-y-2">{card.commonExpressions.map((item,i) => <li key={i} className="rounded-xl bg-white/75 p-3"><b>{item.source}</b><p className="mt-1 text-[#76596b]">{item.translation}</p>{item.note && <p className="mt-1 text-xs italic">{item.note}</p>}</li>)}</ul></div> : null}
+                {!card.synonyms?.length && !card.antonyms?.length && !card.relatedWords?.length && !card.commonExpressions?.length &&
+                  <p className="text-[#806779]">No other forms or related expressions have been curated for this word yet.</p>}
+              </> : <>
+                {card.alternatives?.length ? <div>
+                  <h4 className="font-black">Other ways to say it</h4>
+                  <ul className="mt-2 space-y-2">{card.alternatives.map((item,i) => <li key={i} className="break-words rounded-xl bg-white/75 p-3"><b>{item.text}</b> — {item.translation}{item.context && <p className="mt-1 text-sm text-[#657180]">{item.context}</p>}</li>)}</ul>
+                </div> : <p className="text-[#806779]">No alternative expressions have been curated for this sentence yet.</p>}
+              </>}
+            </div>
+          </details>
+
+          <button onClick={() => save(card)} className="w-full rounded-2xl border-2 border-[#e8c97b] bg-[#f8df9f] px-5 py-4 font-black text-[#4f4638] shadow-[3px_4px_0_#e9dbc1] transition-transform active:translate-y-0.5">{saved ? "✓ Saved on this device" : "♡ Save this card"}</button>
         </div>
       </article>}
       <p className="mt-10 text-center text-xs text-[#8a8b87]">Only published cards are shown. New AI-generated cards are not yet available in public search.</p>
