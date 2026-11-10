@@ -131,6 +131,18 @@ export default function CategoriesPage() {
     }
   }
 
+  function removeSaved(card: LearningCardContent) {
+    try {
+      const next = readSavedCards().reverse().filter(value => !sameCard(value, card));
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setSavedCards([...next].reverse());
+      setExpanded(null);
+      setNotice("Card removed from this device. You can save it again from Search or Categories.");
+    } catch {
+      setNotice("Removing this card is unavailable on this device.");
+    }
+  }
+
   const viewingCards = Boolean(selected) || showSaved;
   const visibleCards = showSaved
     ? savedCards.map((content, index) => ({ id: "saved-" + index, content }))
@@ -192,6 +204,7 @@ export default function CategoriesPage() {
           onToggle={() => setExpanded(current => current === id ? null : id)}
           isSaved={savedCards.some(saved => sameCard(saved, content))}
           onSave={showSaved ? undefined : () => save(content)}
+          onRemove={showSaved ? () => removeSaved(content) : undefined}
         />)}
       </div>}
     </main>
