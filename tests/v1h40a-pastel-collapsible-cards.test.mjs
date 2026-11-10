@@ -65,6 +65,16 @@ test("Examples include bilingual text, optional teaching notes, and truthful cou
   assert.ok(schema.includes("examples?: BilingualExample[]"));
 });
 
+test("example rows show source and translation without redundant language tags", () => {
+  const start = ui.indexOf("{card.examples?.map((example,i)");
+  const end = ui.indexOf("{example.note &&", start);
+  assert.ok(start >= 0 && end > start);
+  const examples = ui.slice(start, end);
+  assert.match(examples, />\{example\.source\}<\/p>/);
+  assert.match(examples, />\{example\.translation\}<\/p>/);
+  assert.doesNotMatch(examples, /card\.(?:sourceLanguage|targetLanguage)/);
+});
+
 test("Inline context, Grammar and Other Forms preserve Sentence Card teaching content", () => {
   for (const term of ["card.naturalMeaning", "grammarNotes?.length",
     "wordNotes?.length", "card.alternatives?.length", "item.context"])
