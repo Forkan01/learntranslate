@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 type AccessState = "checking" | "authorized" | "sign-in" | "restricted" | "disabled" | "unavailable";
@@ -20,6 +20,7 @@ type CardEntry = {
     grammar?: { partOfSpeech?: string; article?: string; plural?: string };
     examples?: Array<{ source: string; translation: string }>;
     grammarBreakdown?: string[];
+    usageNotes?: string[];
   };
 };
 type CardList = { cards: CardEntry[]; hasMore: boolean; offset: number };
@@ -44,6 +45,11 @@ export default function AdminAccessPage() {
   const [loadState, setLoadState] = useState<LoadingState>("loading");
   const [cards, setCards] = useState<CardList | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const [publishChecked, setPublishChecked] = useState(false);
+  const [actionMessage, setActionMessage] = useState("");
+  const transitionActive = useRef(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -99,7 +105,48 @@ export default function AdminAccessPage() {
       }
     })();
     return () => controller.abort();
-  }, [state, filterStatus, filterType, offset]);
+  }, [state, filterStatus, filterType, offset, reloadNonce]);
+
+  async function transition(card: CardEntry, action: "submit" | "reject" | "revise" | "publish") {
+    if (transitionActive.current || (action === "publish" && !publishChecked)) return;
+    transitionActive.current = true;
+    setTransitioning(true);
+    setActionMessage("");
+    const next = {submit:"review",reject:"rejected",revise:"draft",publish:"published"}[action];
+    try {
+      const response = await fetch("/api/admin/cards/" + encodeURIComponent(card.id) + "/review", {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          action, expectedUpdatedAt: card.updatedAt, confirmed: action === "publish",
+        }),
+      });
+      if (response.ok) {
+        const raw: {card?: {id?:string;status?:string}} = await response.json();
+        if (raw.card?.id === card.id && raw.card.status === next) {
+          setActionMessage(action === "publish"
+            ? "Card published. It is now available to public search."
+            : "Card moved to " + next + ".");
+          setPublishChecked(false);
+          setSelectedId(null);
+          setReloadNonce(n => n + 1);
+        } else setActionMessage("Unexpected response. Refresh before attempting any other action.");
+      } else if (response.status === 422) {
+        setActionMessage("Card is incomplete. Return it to Draft and fill the missing translation, grammar or examples.");
+      } else if (response.status === 409) {
+        setActionMessage("Card changed in another session. Refresh before trying again.");
+      } else if (response.status === 404 || response.status === 503) {
+        setActionMessage("Review/publishing is disabled or unavailable on this server.");
+      } else {
+        setActionMessage("Action rejected. Check your administrator session and card status.");
+      }
+    } catch {
+      setActionMessage("Outcome uncertain. Refresh the list before attempting another action.");
+    } finally {
+      transitionActive.current = false;
+      setTransitioning(false);
+    }
+  }
 
   const selected = cards?.cards.find(card => card.id === selectedId);
   const badge = (status: string) => status === "published"
@@ -126,7 +173,7 @@ export default function AdminAccessPage() {
           ) : (
             <>
               <h1 className="mt-7 text-3xl font-black tracking-tight">Card review dashboard</h1>
-              <p className="mt-2 max-w-2xl text-sm text-[#64717a]">Browse Word and Sentence Cards, including private drafts. Drafts can be edited; publishing is not enabled.</p>
+              <p className="mt-2 max-w-2xl text-sm text-[#64717a]">Browse and review private learning cards. Only a fully reviewed card can be published.</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href="/admin/new" className="rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">+ Create private draft</Link>
               </div>
@@ -152,6 +199,7 @@ export default function AdminAccessPage() {
                   </select>
                 </label>
               </div>
+              {actionMessage && <p role="status" className="mt-5 rounded-2xl bg-[#edf4f0] p-4 text-sm">{actionMessage}</p>}
               <section aria-label="Review cards" className="mt-7">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="text-lg font-black">Cards</h2>
@@ -173,7 +221,7 @@ export default function AdminAccessPage() {
                     <div className="mt-4 grid gap-3">
                       {cards.cards.map(card => (
                         <button key={card.id} type="button" aria-pressed={selectedId === card.id}
-                          onClick={() => setSelectedId(current => current === card.id ? null : card.id)}
+                          onClick={() => { setSelectedId(current => current === card.id ? null : card.id); setPublishChecked(false); setActionMessage(""); }}
                           className="rounded-2xl border border-[#e0dfd6] bg-[#fbfaf7] p-4 text-left transition hover:border-[#8dafa4] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#668d84]">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <span className="min-w-0 break-words text-lg font-black">{card.term}</span>
@@ -221,12 +269,65 @@ export default function AdminAccessPage() {
                       </ul>
                     </div>
                   ) : null}
+                  {selected.content.usageNotes?.length ? (
+                    <div className="mt-3"><h3 className="text-sm font-black">Usage notes</h3>
+                      <ul className="mt-2 list-inside list-disc text-sm">
+                        {selected.content.usageNotes.map((note,index) => <li key={index}>{note}</li>)}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {selected.status === "review" && (
+                    <details className="mt-4 rounded-xl border border-[#b9cec1] bg-white p-3">
+                      <summary className="cursor-pointer text-sm font-black">Inspect every structured card field</summary>
+                      <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(selected.content, null, 2)}</pre>
+                    </details>
+                  )}
                   {selected.status === "draft" && (
                     <Link href={"/admin/edit/" + selected.id}
                       className="mt-5 inline-block rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">
                       Edit private draft →
                     </Link>
                   )}
+                  {selected.status === "draft" && (
+                    <div className="mt-4"><button type="button" disabled={transitioning}
+                      onClick={() => void transition(selected,"submit")}
+                      className="rounded-xl bg-[#e5e6a4] px-4 py-3 text-sm font-black disabled:opacity-50">
+                      Submit completed card for review →
+                    </button></div>
+                  )}
+                  {selected.status === "review" && (
+                    <div className="mt-5 space-y-3 rounded-2xl border border-[#abc5b8] bg-white p-4">
+                      <p className="text-sm font-bold">Review the complete translation, grammar and examples before publishing.</p>
+                      <label className="flex items-start gap-3 text-sm">
+                        <input type="checkbox" checked={publishChecked} disabled={transitioning}
+                          onChange={event => setPublishChecked(event.target.checked)}
+                          className="mt-1" />
+                        I personally checked that this card is accurate and suitable for learners.
+                      </label>
+                      <div className="flex flex-wrap gap-3">
+                        <button type="button" disabled={transitioning || !publishChecked}
+                          onClick={() => void transition(selected,"publish")}
+                          className="rounded-xl bg-[#668d84] px-4 py-3 text-sm font-black text-white disabled:opacity-40">
+                          Approve & Publish to public Search
+                        </button>
+                        <button type="button" disabled={transitioning}
+                          onClick={() => void transition(selected,"reject")}
+                          className="rounded-xl border border-[#d4b6a6] px-4 py-3 text-sm font-bold disabled:opacity-40">
+                          Reject card
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {selected.status === "rejected" && (
+                    <div className="mt-4">
+                      <button type="button" disabled={transitioning}
+                        onClick={() => void transition(selected,"revise")}
+                        className="rounded-xl border px-4 py-3 text-sm font-bold disabled:opacity-40">
+                        Return to Draft for corrections
+                      </button>
+                    </div>
+                  )}
+                  {selected.status === "published" && <p className="mt-4 text-xs font-bold text-[#28604a]">Published · searchable by students</p>}
                   <p className="mt-4 text-xs text-[#748078]">Updated {selected.updatedAt.slice(0, 10)} · Read-only preview</p>
                 </section>
               )}
