@@ -21,6 +21,18 @@ export default function CardSearchPage() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  function alreadySaved(card: LearningCardContent): boolean {
+    try {
+      const existing: unknown = JSON.parse(localStorage.getItem("lt:cards:v1") || "[]");
+      return Array.isArray(existing) && existing.some(value =>
+        value !== null && typeof value === "object" &&
+        (value as LearningCardContent).term === card.term &&
+        (value as LearningCardContent).type === card.type &&
+        (value as LearningCardContent).sourceLanguage === card.sourceLanguage);
+    } catch {
+      return false;
+    }
+  }
   async function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!term.trim() || loading) return;
@@ -38,8 +50,10 @@ export default function CardSearchPage() {
         const payload: { found: boolean; card: { id: string; content: LearningCardContent } | null } = await response.json();
         if (payload.found && payload.card) { found = payload.card; break; }
       }
-      if (found) setResult({ ...found, searchedSource: source, searchedTerm: submittedTerm });
-      else setMissing(true);
+      if (found) {
+        setResult({ ...found, searchedSource: source, searchedTerm: submittedTerm });
+        setSaved(alreadySaved(found.content));
+      } else setMissing(true);
     } catch { setNotice("Search is temporarily unavailable. Please try again."); }
     finally { setLoading(false); }
   }
