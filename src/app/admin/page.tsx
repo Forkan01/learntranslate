@@ -176,6 +176,7 @@ export default function AdminAccessPage() {
               <p className="mt-2 max-w-2xl text-sm text-[#64717a]">Browse and review private learning cards. Only a fully reviewed card can be published.</p>
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link href="/admin/new" className="rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">+ Create private draft</Link>
+                <Link href="/admin/bulk" className="rounded-2xl border border-[#8eaaa0] bg-[#f4f9f5] px-5 py-3 text-sm font-black text-[#456d63]">Import multiple drafts</Link>
               </div>
               <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="text-sm font-bold">Status
