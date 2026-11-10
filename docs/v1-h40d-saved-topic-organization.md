@@ -31,7 +31,7 @@ simple topic-based organization. Keep the two top-level navigation destinations:
   type, source language and original term (encoded as a JSON tuple to avoid
   delimiter collisions).
 - The topic parser rejects malformed/unknown labels and is bounded to
-  200 entries / 40 KB. No stored topic text is injected as HTML.
+  200 entries / 100 KB. No stored topic text is injected as HTML.
 - The preset topic list remains available when the public category API
   cannot be reached, so previously saved cards can still be browsed offline
   after the app is loaded.
