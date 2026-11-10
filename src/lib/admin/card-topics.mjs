@@ -43,6 +43,11 @@ export function topicLinksUrl(base, cardId) {
   url.searchParams.set("limit","101");
   return url;
 }
+export function topicInsertUrl(base) {
+  const url=endpoint(base,"card_categories");
+  url.searchParams.set("select","card_id,category_id");
+  return url;
+}
 export function topicWriteUrl(base, cardId, categoryId) {
   if (!validDraftId(cardId) || !validDraftId(categoryId))
     throw new Error("Invalid relationship");
