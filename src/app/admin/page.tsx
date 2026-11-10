@@ -283,6 +283,12 @@ export default function AdminAccessPage() {
                       <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap break-all text-xs">{JSON.stringify(selected.content, null, 2)}</pre>
                     </details>
                   )}
+                  <div className="mt-5">
+                    <Link href={"/admin/topics/" + selected.id}
+                      className="inline-block rounded-2xl border border-[#8eaaa0] bg-[#f4f9f5] px-5 py-3 text-sm font-black text-[#456d63]">
+                      Assign topic categories →
+                    </Link>
+                  </div>
                   {selected.status === "draft" && (
                     <Link href={"/admin/edit/" + selected.id}
                       className="mt-5 inline-block rounded-2xl bg-[#668d84] px-5 py-3 text-sm font-black text-white">
