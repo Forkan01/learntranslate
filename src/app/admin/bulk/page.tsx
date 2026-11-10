@@ -146,7 +146,7 @@ export default function BulkAdminDraftPage() {
                   {!parsed ? (
                     <p role="alert" className="mt-2 text-sm text-[#925e37]">
                       Invalid batch ({lines} nonempty lines). Use 1–20 unique pairs,
-                      each with exactly two nonempty fields separated by a tab or " | ".
+                      each with exactly two nonempty fields separated by a tab or &quot; | &quot;.
                     </p>
                   ) : (
                     <>
