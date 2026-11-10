@@ -55,7 +55,7 @@ function validCardKey(key) {
 export function parseSavedTopics(raw) {
   /** @type {Record<string, string>} */
   const safe = Object.create(null);
-  if (!raw || raw.length > 40000) return safe;
+  if (!raw || raw.length > 100000) return safe;
   try {
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return safe;
