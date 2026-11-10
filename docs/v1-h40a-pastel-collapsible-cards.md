@@ -10,8 +10,10 @@ any API, card schema, storage, authentication or publication behavior.
   Cards, keep the additional natural/contextual explanation visible just
   below the primary translation. Preserve all curated usage notes in
   **Other Forms**.
-- Place exactly **three** stacked, rounded, pastel teaching containers:
-  **Grammar**, **Examples (actual count)** and **Other Forms**.
+- Display **four** stacked, rounded, pastel teaching containers for **Word Cards**:
+  **Grammar**, **Examples (actual count)**, **Synonyms & Antonyms**, and **Other Forms**.
+  Sentence Cards retain three sections: Grammar, Examples and Other Forms.
+  All are collapsed by default.
 - Each container is a native HTML `<details>` element, collapsed by
   default, independently expandable by keyboard, mouse and touch.
 - Use compact, consistent chevron-down **SVG icons** like the approved
@@ -21,10 +23,14 @@ any API, card schema, storage, authentication or publication behavior.
   forms; Sentence grammar breakdown and word-by-word explanations.
 - Examples: list the actual curated bilingual example count. Five examples
   for complete approved Word Cards; a truthful smaller/zero count for Sentence
-  Cards when the data does not include five.
-- Other Forms: Word synonyms, antonyms, related words and curated common
-  expressions, usage notes, or Sentence alternatives. Never invent content for missing
-  fields; show a gentle empty state instead.
+  Cards when the data does not include five. Do not repeat "German" / "English"
+  language badges next to each bilingual example; keep source then translation.
+- Synonyms & Antonyms (Word Cards only): render the existing curated arrays in separate
+  readable word chips. Never fabricate a direct opposite; use a friendly empty state
+  if either array is empty. This section does not appear on Sentence Cards.
+- Other Forms: Word related words, curated common expressions, usage notes,
+  or Sentence alternatives. Synonyms/antonyms are no longer duplicated here.
+  Never invent content for missing fields; show a gentle empty state instead.
 - Preserve the existing **Listen** button and **Save this card** action.
 - Search still returns published-only results and existing direction-aware
   German ↔ English presentation.
@@ -64,14 +70,18 @@ npx tsc --noEmit
 ## Local browser acceptance
 Start with `npm run dev`; use `http://localhost:3000/search`:
 1. Search a published German word with examples. Confirm **English** is
-   the largest text, German original is smaller, and three pastel sections
-   appear all collapsed.
-2. Expand Grammar, Examples, Other Forms one at a time. Confirm
-   each opens and closes on tap, all example translations are visible, and
-   noun article and plural are readable where present.
+   the largest text, German original is smaller, and four pastel sections
+   appear all collapsed (three for Sentence Cards).
+2. Expand Grammar, Examples, Synonyms & Antonyms, and Other Forms one at a time.
+   Confirm they open/close on tap, all example translations are visible without
+   redundant language badges, and noun article and plural are readable.
+   Confirm the new section uses only existing curated synonyms/antonyms and shows
+   independent empty states if either list is absent, without duplicating them
+   in Other Forms.
 3. Search a known published German Sentence Card, such as
    `Es kommt mir bekannt vor.`. Verify natural meaning is visible under the translation, grammar notes,
    and a graceful empty state when optional examples/alternatives are absent.
+   Confirm the Sentence Card has no Synonyms & Antonyms section.
 4. Switch to English → German, search a known published English sense,
    and confirm **German** is the headline without reversing the source
    examples/grammar incorrectly.
