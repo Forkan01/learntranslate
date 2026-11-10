@@ -9,6 +9,7 @@ type Props = {
   expanded: boolean;
   onToggle: () => void;
   onSave?: () => void;
+  onRemove?: () => void;
   isSaved?: boolean;
 };
 
@@ -20,7 +21,7 @@ const Chevron = ({ color }: { color: string }) => (
   </svg>
 );
 
-export default function LearningCard({ card, expanded, onToggle, onSave, isSaved = false }: Props) {
+export default function LearningCard({ card, expanded, onToggle, onSave, onRemove, isSaved = false }: Props) {
   // Category and device-saved cards are displayed in their stored direction.
   // The opposite-language translation is always the main headline.
   const display = getCardDisplay(card, card.sourceLanguage, card.term);
@@ -172,6 +173,13 @@ export default function LearningCard({ card, expanded, onToggle, onSave, isSaved
         className="w-full rounded-2xl border-2 border-[#e8c97b] bg-[#f8df9f] px-5 py-4 font-black text-[#4f4638] shadow-[3px_4px_0_#e9dbc1]">
         {isSaved ? "✓ Saved on this device" : "♡ Save this card"}
       </button>}
+    </div>}
+    {onRemove && <div className="flex justify-end border-t border-[#e8e0d6] bg-[#fffdfa] px-5 py-3">
+      <button type="button" onClick={onRemove}
+        aria-label={`Remove ${card.term} from saved cards`}
+        className="rounded-xl border border-[#e5cddd] bg-white px-4 py-2 text-sm font-bold text-[#85576e] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#85576e]">
+        Remove from saved
+      </button>
     </div>}
   </article>;
 }
