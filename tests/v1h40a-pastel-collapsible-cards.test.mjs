@@ -15,27 +15,28 @@ test("the translation-first card keeps the primary meaning visible outside accor
   assert.match(ui, /pronounce\(card\.term\)/);
 });
 
-test("the three teaching sections are independently collapsible; Meaning is not repeated", () => {
+test("three shared sections and one Word-only synonyms section are independently collapsible", () => {
   const summaries = [...ui.matchAll(/<summary\b[^>]*>[\s\S]*?<\/summary>/g)]
     .map(m => m[0]);
-  assert.equal(summaries.length, 3);
-  for (const section of ["Grammar", "Examples", "Other Forms"])
+  assert.equal(summaries.length, 4);
+  for (const section of ["Grammar", "Examples", "Synonyms &amp; Antonyms", "Other Forms"])
     assert.ok(summaries.some(summary => summary.includes(section)), section);
   assert.ok(summaries.every(summary => !summary.includes(">Meaning<")));
   const details = [...ui.matchAll(/<details\b[^>]*>/g)].map(m => m[0]);
-  assert.equal(details.length, 3);
+  assert.equal(details.length, 4);
+  assert.match(ui, /\{card\.type === "word" && \(\s*<details/);
   for (const section of details) {
     assert.match(section, /className="group/);
     assert.doesNotMatch(section, /(?:\s|^)open(?:\s|=|>)/);
   }
 });
 
-test("three pastel containers use clean chevrons like the approved illustration", () => {
-  for (const color of ["#e6f2ec", "#f1f4fb", "#f9edf3"])
+test("four pastel containers use clean chevrons like the approved illustration", () => {
+  for (const color of ["#e6f2ec", "#f1f4fb", "#f9edf3", "#fff2d9"])
     assert.ok(ui.includes("bg-[" + color + "]"), color);
   assert.match(ui, /rounded-\[24px\] border-2/);
-  assert.equal((ui.match(/<svg aria-hidden="true" viewBox="0 0 24 24"/g)||[]).length, 3);
-  assert.equal((ui.match(/<path d="m6 9 6 6 6-6"/g)||[]).length, 3);
+  assert.equal((ui.match(/<svg aria-hidden="true" viewBox="0 0 24 24"/g)||[]).length, 4);
+  assert.equal((ui.match(/<path d="m6 9 6 6 6-6"/g)||[]).length, 4);
   assert.match(ui, /group-open:rotate-180/);
   assert.doesNotMatch(ui, />⌄<|>Meaning<\/span>/);
 });
@@ -84,8 +85,21 @@ test("Inline context, Grammar and Other Forms preserve Sentence Card teaching co
   assert.match(ui, /Other ways to say it/);
 });
 
+test("Word Cards have a dedicated synonyms and antonyms accordion, not duplicates in Other Forms", () => {
+  const start = ui.indexOf("Synonyms &amp; Antonyms");
+  const end = ui.indexOf(">Other Forms</span>", start);
+  assert.ok(start >= 0 && end > start);
+  const vocabulary = ui.slice(start, end);
+  assert.match(vocabulary, /card\.synonyms\.map/);
+  assert.match(vocabulary, /card\.antonyms\.map/);
+  assert.match(vocabulary, /No curated synonyms are available/);
+  assert.match(vocabulary, /No direct antonyms have been curated/);
+  const otherForms = ui.slice(end);
+  assert.doesNotMatch(otherForms, /card\.(?:synonyms|antonyms)/);
+});
+
 test("Word Card Other Forms preserves curated related words without inventing content", () => {
-  for (const key of ["synonyms", "antonyms", "relatedWords", "commonExpressions"])
+  for (const key of ["relatedWords", "commonExpressions"])
     assert.ok(ui.includes("card." + key));
   assert.match(ui, /No other forms or related expressions have been curated/);
   assert.match(ui, /No alternative expressions have been curated/);
