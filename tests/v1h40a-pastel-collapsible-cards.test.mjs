@@ -18,7 +18,7 @@ test("the translation-first card keeps the primary meaning visible outside accor
 test("the four approved learning sections exist and start collapsed", () => {
   const sections = ["Meaning", "Grammar", "Examples", "Other Forms"];
   for (const section of sections) {
-    assert.match(ui, new RegExp("<summary[^>]*>[\\\\s\\\\S]*?" + section));
+    assert.match(ui, new RegExp("<summary[^>]*>[\\s\\S]*?" + section));
   }
   const details = [...ui.matchAll(/<details\b[^>]*>/g)].map(m => m[0]);
   assert.equal(details.length, 4);
