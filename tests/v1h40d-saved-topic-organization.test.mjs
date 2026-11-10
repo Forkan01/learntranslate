@@ -85,7 +85,7 @@ test("parses valid local topic metadata and rejects invalid or unknown entries",
   assert.deepEqual(Object.keys(parseSavedTopics("not JSON")), []);
   assert.deepEqual(Object.keys(parseSavedTopics("[]")), []);
   assert.deepEqual(Object.keys(parseSavedTopics(null)), []);
-  assert.deepEqual(Object.keys(parseSavedTopics("x".repeat(40001))), []);
+  assert.deepEqual(Object.keys(parseSavedTopics("x".repeat(100001))), []);
 });
 
 test("filters saved cards by All, Unsorted, topic and bilingual search", () => {
