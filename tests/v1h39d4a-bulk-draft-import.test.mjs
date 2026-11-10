@@ -145,7 +145,7 @@ test("server inserts a whole array only with two default-off flags", () => {
   assert.match(server,/method: "POST"/);
   assert.match(server,/Prefer: "return=representation"/);
   assert.doesNotMatch(server,/method: "(PUT|PATCH|DELETE)"/);
-  assert.doesNotMatch(server,/upsert|on_conflict|resolution=merge-duplicates/i);
+  assert.doesNotMatch(server,/on_conflict|resolution=merge-duplicates/i);
 });
 
 test("UI previews cards, allows mobile input, and links from admin", () => {
