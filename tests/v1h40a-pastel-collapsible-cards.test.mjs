@@ -65,7 +65,7 @@ test("Examples include bilingual text, optional teaching notes, and truthful cou
   assert.ok(schema.includes("examples?: BilingualExample[]"));
 });
 
-test("Meaning, Grammar and Other Forms preserve Sentence Card teaching content", () => {
+test("Inline context, Grammar and Other Forms preserve Sentence Card teaching content", () => {
   for (const term of ["card.naturalMeaning", "grammarNotes?.length",
     "wordNotes?.length", "card.alternatives?.length", "item.context"])
     assert.ok(ui.includes(term),term);
