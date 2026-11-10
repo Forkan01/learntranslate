@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { LearningCardContent } from "@/lib/cards/schema";
 import LearningCard from "./LearningCard";
+import {
+  SAVED_TOPICS, SAVED_TOPIC_STORAGE_KEY, savedCardKey, parseSavedTopics,
+  assignSavedTopic, removeSavedTopic, filterSavedCards, isSavedTopic
+} from "@/lib/cards/saved-topics.mjs";
 
 type Category = { id: string; slug: string; name: string; description?: string };
 type CardRow = { id: string; term: string; type: "word" | "sentence"; content: LearningCardContent };
@@ -40,6 +44,14 @@ function readSavedCards(): LearningCardContent[] {
   }
 }
 
+function readSavedTopics(): Record<string, string> {
+  try {
+    return parseSavedTopics(localStorage.getItem(SAVED_TOPIC_STORAGE_KEY));
+  } catch {
+    return {};
+  }
+}
+
 function sameCard(a: LearningCardContent, b: LearningCardContent): boolean {
   return a.type === b.type && a.term === b.term && a.sourceLanguage === b.sourceLanguage;
 }
@@ -50,6 +62,9 @@ export default function CategoriesPage() {
   const [showSaved, setShowSaved] = useState(false);
   const [cards, setCards] = useState<CardRow[]>([]);
   const [savedCards, setSavedCards] = useState<LearningCardContent[]>([]);
+  const [topicAssignments, setTopicAssignments] = useState<Record<string, string>>({});
+  const [savedTopicFilter, setSavedTopicFilter] = useState("all");
+  const [savedSearch, setSavedSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -73,7 +88,10 @@ export default function CategoriesPage() {
   useEffect(() => {
     // The existing Search Save button writes to localStorage. Read the same key,
     // including after a storage change in another browser tab.
-    const load = () => setSavedCards(readSavedCards());
+    const load = () => {
+      setSavedCards(readSavedCards());
+      setTopicAssignments(readSavedTopics());
+    };
     const timer = window.setTimeout(load, 0);
     window.addEventListener("storage", load);
     return () => {
@@ -109,6 +127,9 @@ export default function CategoriesPage() {
     setNotice("");
     setError("");
     setSavedCards(readSavedCards());
+    setTopicAssignments(readSavedTopics());
+    setSavedTopicFilter("all");
+    setSavedSearch("");
   }
 
   function backToCategories() {
@@ -125,6 +146,21 @@ export default function CategoriesPage() {
       const next = [...old.filter(value => !sameCard(value, card)), card].slice(-200);
       localStorage.setItem(storageKey, JSON.stringify(next));
       setSavedCards([...next].reverse());
+      // A card saved from a published category gets that topic automatically,
+      // unless the user has already assigned it a different topic.
+      if (selected && isSavedTopic(selected.slug)) {
+        try {
+          const existingTopics = readSavedTopics();
+          if (!Object.hasOwn(existingTopics, savedCardKey(card))) {
+            const assigned = assignSavedTopic(existingTopics, card, selected.slug);
+            localStorage.setItem(SAVED_TOPIC_STORAGE_KEY, JSON.stringify(assigned));
+            setTopicAssignments(assigned);
+          }
+        } catch {
+          setNotice("Card saved, but its topic could not be assigned on this device.");
+          return;
+        }
+      }
       setNotice("Card saved on this device.");
     } catch {
       setNotice("Saving is unavailable on this device.");
@@ -137,15 +173,38 @@ export default function CategoriesPage() {
       localStorage.setItem(storageKey, JSON.stringify(next));
       setSavedCards([...next].reverse());
       setExpanded(null);
+      try {
+        const topics = removeSavedTopic(readSavedTopics(), card);
+        localStorage.setItem(SAVED_TOPIC_STORAGE_KEY, JSON.stringify(topics));
+        setTopicAssignments(topics);
+      } catch {
+        setNotice("Card removed, but its topic label could not be cleared.");
+        return;
+      }
       setNotice("Card removed from this device. You can save it again from Search or Categories.");
     } catch {
       setNotice("Removing this card is unavailable on this device.");
     }
   }
 
+  function changeSavedTopic(card: LearningCardContent, slug: string) {
+    try {
+      const next = assignSavedTopic(readSavedTopics(), card, slug);
+      localStorage.setItem(SAVED_TOPIC_STORAGE_KEY, JSON.stringify(next));
+      setTopicAssignments(next);
+      setExpanded(null);
+      const name = SAVED_TOPICS.find(topic => topic.slug === slug)?.name;
+      setNotice(name ? "Card organized under " + name + "." : "Card moved to Unsorted.");
+    } catch {
+      setNotice("Topic assignment is unavailable on this device.");
+    }
+  }
+
   const viewingCards = Boolean(selected) || showSaved;
+  const filteredSavedCards = filterSavedCards(savedCards, topicAssignments, savedTopicFilter, savedSearch);
+  const unsortedCount = savedCards.filter(card => !topicAssignments[savedCardKey(card)]).length;
   const visibleCards = showSaved
-    ? savedCards.map((content, index) => ({ id: "saved-" + index, content }))
+    ? filteredSavedCards.map(content => ({ id: "saved-" + savedCardKey(content), content }))
     : cards.map(card => ({ id: card.id, content: card.content }));
 
   return <div className="min-h-screen bg-[#fffaf2] text-[#343d4a]">
@@ -194,18 +253,55 @@ export default function CategoriesPage() {
         </button>)}
       </div>}
 
+      {showSaved && <section className="mt-6 rounded-[24px] border-2 border-[#d8c9e5] bg-[#f9edf3] p-4 sm:p-5">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm font-bold" htmlFor="saved-search">Find a saved card
+            <input id="saved-search" type="search" value={savedSearch} maxLength={250}
+              onChange={event => { setSavedSearch(event.target.value); setExpanded(null); }}
+              placeholder="Word or translation"
+              className="mt-2 w-full rounded-xl border border-[#e2cddd] bg-white p-3 font-normal outline-none focus:ring-2 focus:ring-[#bb94ad]" />
+          </label>
+          <label className="block text-sm font-bold" htmlFor="saved-topic-filter">Filter by topic
+            <select id="saved-topic-filter" value={savedTopicFilter}
+              onChange={event => { setSavedTopicFilter(event.target.value); setExpanded(null); }}
+              className="mt-2 w-full rounded-xl border border-[#e2cddd] bg-white p-3 font-normal outline-none focus:ring-2 focus:ring-[#bb94ad]">
+              <option value="all">All saved cards ({savedCards.length})</option>
+              <option value="unsorted">Unsorted ({unsortedCount})</option>
+              {SAVED_TOPICS.map(topic => <option key={topic.slug} value={topic.slug}>
+                {topic.name} ({savedCards.filter(card => topicAssignments[savedCardKey(card)] === topic.slug).length})
+              </option>)}
+            </select>
+          </label>
+        </div>
+        <p className="mt-3 text-xs font-semibold text-[#806779]">
+          Showing {filteredSavedCards.length} of {savedCards.length} saved cards. Topics are stored on this device.
+        </p>
+      </section>}
       {viewingCards && (!loading || showSaved) && <div className="mt-8 space-y-5">
         {visibleCards.length === 0 && <p className="rounded-2xl bg-white p-5">
-          {showSaved ? "No saved cards yet. Search for a word or sentence and tap Save this card." : "No published cards in this category yet."}
+          {showSaved ? (savedCards.length ? "No saved cards match this topic or search." : "No saved cards yet. Search for a word or sentence and tap Save this card.") : "No published cards in this category yet."}
         </p>}
-        {visibleCards.map(({ id, content }) => <LearningCard key={id}
+        {visibleCards.map(({ id, content }, index) => <div key={id} className="space-y-2">
+          {showSaved && <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[#e5cddd] bg-[#f9edf3] px-4 py-3">
+            <label htmlFor={"saved-card-topic-" + index} className="text-sm font-bold">Organize by topic</label>
+            <select id={"saved-card-topic-" + index}
+              value={topicAssignments[savedCardKey(content)] || ""}
+              onChange={event => changeSavedTopic(content, event.target.value)}
+              aria-label={"Topic for " + content.term}
+              className="max-w-full rounded-xl border border-[#ddc0d1] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#bb94ad]">
+              <option value="">Unsorted</option>
+              {SAVED_TOPICS.map(topic => <option key={topic.slug} value={topic.slug}>{topic.name}</option>)}
+            </select>
+          </div>}
+          <LearningCard key={id}
           card={content}
           expanded={expanded === id}
           onToggle={() => setExpanded(current => current === id ? null : id)}
           isSaved={savedCards.some(saved => sameCard(saved, content))}
           onSave={showSaved ? undefined : () => save(content)}
           onRemove={showSaved ? () => removeSaved(content) : undefined}
-        />)}
+        />
+        </div>)}
       </div>}
     </main>
   </div>;
