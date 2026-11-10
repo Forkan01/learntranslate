@@ -19,6 +19,7 @@ export function parseTopicChange(raw: unknown): {categoryId: string} | null;
 export function topicCardUrl(base: string, cardId: string): URL;
 export function topicCategoriesUrl(base: string): URL;
 export function topicLinksUrl(base: string, cardId: string): URL;
+export function topicInsertUrl(base: string): URL;
 export function topicWriteUrl(base: string, cardId: string, categoryId: string): URL;
 export function parseTopicSnapshot(
   cardRows: unknown, categories: unknown, links: unknown, cardId: string
