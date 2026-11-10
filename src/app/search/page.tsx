@@ -181,23 +181,49 @@ export default function CardSearchPage() {
             </div>
           </details>
 
-          <details className="group rounded-[24px] border-2 border-[#e5cddd] bg-[#f9edf3] p-4 shadow-[3px_4px_0_#eddee8] sm:p-5">
+          {card.type === "word" && (
+            <details className="group rounded-[24px] border-2 border-[#e5cddd] bg-[#f9edf3] p-4 shadow-[3px_4px_0_#eddee8] sm:p-5">
+              <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
+                <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#e3c6d6] bg-white/80 text-2xl">↔</span>
+                <span className="min-w-0 flex-1 text-lg font-black tracking-tight">Synonyms &amp; Antonyms</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-[#85576e] transition-transform duration-200 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
+              </summary>
+              <div className="mt-4 space-y-4 border-t border-[#e5cddd] pt-4 text-sm leading-relaxed">
+                <section>
+                  <h4 className="font-black">Synonyms</h4>
+                  {card.synonyms?.length ? (
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {card.synonyms.map((word,i) => <li key={i} className="max-w-full break-words rounded-full border border-[#e4cddd] bg-white/85 px-3 py-2 font-semibold">{word}</li>)}
+                    </ul>
+                  ) : <p className="mt-2 text-[#806779]">No curated synonyms are available for this word yet.</p>}
+                </section>
+                <section>
+                  <h4 className="font-black">Antonyms</h4>
+                  {card.antonyms?.length ? (
+                    <ul className="mt-2 flex flex-wrap gap-2">
+                      {card.antonyms.map((word,i) => <li key={i} className="max-w-full break-words rounded-full border border-[#e4cddd] bg-white/85 px-3 py-2 font-semibold">{word}</li>)}
+                    </ul>
+                  ) : <p className="mt-2 text-[#806779]">No direct antonyms have been curated for this word yet.</p>}
+                </section>
+              </div>
+            </details>
+          )}
+
+          <details className="group rounded-[24px] border-2 border-[#e8d6a8] bg-[#fff2d9] p-4 shadow-[3px_4px_0_#efe4c9] sm:p-5">
             <summary className="flex cursor-pointer list-none items-center gap-3 [&::-webkit-details-marker]:hidden">
-              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#e3c6d6] bg-white/80 text-2xl">✿</span>
+              <span aria-hidden="true" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#ebdab2] bg-white/80 text-2xl">✿</span>
               <span className="min-w-0 flex-1 text-lg font-black tracking-tight">Other Forms</span>
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-[#85576e] transition-transform duration-200 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0 text-[#887047] transition-transform duration-200 group-open:rotate-180"><path d="m6 9 6 6 6-6" /></svg>
             </summary>
-            <div className="mt-4 space-y-4 border-t border-[#e5cddd] pt-4 text-sm leading-relaxed">
-                {card.usageNotes?.length ? <div>
+            <div className="mt-4 space-y-4 border-t border-[#e8d6a8] pt-4 text-sm leading-relaxed">
+              {card.usageNotes?.length ? <div>
                   <h4 className="font-black">Usage notes</h4>
                   <ul className="mt-2 list-inside list-disc space-y-2">{card.usageNotes.map((note,i) => <li key={i}>{note}</li>)}</ul>
                 </div> : null}
               {card.type === "word" ? <>
-                {card.synonyms?.length ? <div><h4 className="font-black">Synonyms</h4><p className="mt-1 break-words">{card.synonyms.join(" · ")}</p></div> : null}
-                {card.antonyms?.length ? <div><h4 className="font-black">Antonyms</h4><p className="mt-1 break-words">{card.antonyms.join(" · ")}</p></div> : null}
                 {card.relatedWords?.length ? <div><h4 className="font-black">Related words</h4><p className="mt-1 break-words">{card.relatedWords.join(" · ")}</p></div> : null}
                 {card.commonExpressions?.length ? <div><h4 className="font-black">Common expressions</h4><ul className="mt-2 space-y-2">{card.commonExpressions.map((item,i) => <li key={i} className="rounded-xl bg-white/75 p-3"><b>{item.source}</b><p className="mt-1 text-[#76596b]">{item.translation}</p>{item.note && <p className="mt-1 text-xs italic">{item.note}</p>}</li>)}</ul></div> : null}
-                {!card.synonyms?.length && !card.antonyms?.length && !card.relatedWords?.length && !card.commonExpressions?.length && !card.usageNotes?.length &&
+                {!card.relatedWords?.length && !card.commonExpressions?.length && !card.usageNotes?.length &&
                   <p className="text-[#806779]">No other forms or related expressions have been curated for this word yet.</p>}
               </> : <>
                 {card.alternatives?.length ? <div>
