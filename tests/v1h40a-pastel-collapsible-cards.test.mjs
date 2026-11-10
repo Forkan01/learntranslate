@@ -16,35 +16,35 @@ test("the translation-first card keeps the primary meaning visible outside accor
 });
 
 test("the three teaching sections are independently collapsible; Meaning is not repeated", () => {
-  const summaries = [...ui.matchAll(/<summary\\b[^>]*>[\\s\\S]*?<\\/summary>/g)]
+  const summaries = [...ui.matchAll(/<summary\b[^>]*>[\s\S]*?<\/summary>/g)]
     .map(m => m[0]);
   assert.equal(summaries.length, 3);
   for (const section of ["Grammar", "Examples", "Other Forms"])
     assert.ok(summaries.some(summary => summary.includes(section)), section);
   assert.ok(summaries.every(summary => !summary.includes(">Meaning<")));
-  const details = [...ui.matchAll(/<details\\b[^>]*>/g)].map(m => m[0]);
+  const details = [...ui.matchAll(/<details\b[^>]*>/g)].map(m => m[0]);
   assert.equal(details.length, 3);
   for (const section of details) {
     assert.match(section, /className="group/);
-    assert.doesNotMatch(section, /(?:\\s|^)open(?:\\s|=|>)/);
+    assert.doesNotMatch(section, /(?:\s|^)open(?:\s|=|>)/);
   }
 });
 
 test("three pastel containers use clean chevrons like the approved illustration", () => {
   for (const color of ["#e6f2ec", "#f1f4fb", "#f9edf3"])
     assert.ok(ui.includes("bg-[" + color + "]"), color);
-  assert.match(ui, /rounded-\\[24px\\] border-2/);
+  assert.match(ui, /rounded-\[24px\] border-2/);
   assert.equal((ui.match(/<svg aria-hidden="true" viewBox="0 0 24 24"/g)||[]).length, 3);
   assert.equal((ui.match(/<path d="m6 9 6 6 6-6"/g)||[]).length, 3);
   assert.match(ui, /group-open:rotate-180/);
-  assert.doesNotMatch(ui, />⌄<|>Meaning<\\/span>/);
+  assert.doesNotMatch(ui, />⌄<|>Meaning<\/span>/);
 });
 
 test("sentence meaning stays visible, usage notes remain available", () => {
   const hero=ui.split('<div className="space-y-4 bg-[#fffdfa]')[0];
-  assert.match(hero, /\\{card\\.naturalMeaning\\}/);
+  assert.match(hero, /\{card\.naturalMeaning\}/);
   assert.match(hero, /In context:/);
-  assert.match(ui, /card\\.usageNotes\\?\\.length/);
+  assert.match(ui, /card\.usageNotes\?\.length/);
   assert.match(ui, /Usage notes/);
 });
 
