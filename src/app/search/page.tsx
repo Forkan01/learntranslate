@@ -172,12 +172,9 @@ export default function CardSearchPage() {
             <div className="mt-4 border-t border-[#cfd9ed] pt-4">
               {(card.examples?.length ?? 0) > 0 ? <ol className="space-y-3">
                 {card.examples?.map((example,i) => <li key={i} className="rounded-2xl border border-white bg-white/80 p-4">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e6ebf7] text-xs font-black text-[#58709b]">{i+1}</span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#677b9f]">{card.sourceLanguage === "de" ? "German" : "English"}</span>
-                  </div>
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#e6ebf7] text-xs font-black text-[#58709b]">{i+1}</span>
                   <p className="mt-2 break-words font-semibold">{example.source}</p>
-                  <p className="mt-2 break-words text-sm leading-relaxed text-[#5f6c84]"><span className="mr-2 text-[10px] font-bold uppercase tracking-wider">{card.targetLanguage === "de" ? "German" : "English"}</span>{example.translation}</p>
+                  <p className="mt-2 break-words text-sm leading-relaxed text-[#5f6c84]">{example.translation}</p>
                   {example.note && <p className="mt-2 text-xs italic text-[#60728b]">{example.note}</p>}
                 </li>)}
               </ol> : <p className="text-sm text-[#60728b]">No curated examples are available for this card yet.</p>}
